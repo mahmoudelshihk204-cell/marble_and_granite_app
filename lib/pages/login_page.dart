@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:marble_and_granite/Widgets/custom_text_feild.dart';
 
-
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
   static String id = 'LoginPage';
@@ -27,16 +26,28 @@ class LoginPage extends StatelessWidget {
           ),
         ),
       ),
-      body: ListView(
-        children: [
-          SizedBox(height: 20,),
-          CustomTextField(hint: 'first')
-
-        ],
-
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 50),
+        child: ListView(
+          children: [
+            SizedBox(height: 20),
+            Text(
+              'LogIn',
+              style: TextStyle(
+                fontFamily: 'Tuffy',
+                fontSize: 35,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 20),
+            CustomTextField(hint: 'User Name' ,icon: Icons.person,),
+            SizedBox(height: 20),
+            CustomTextField(hint: 'Password',icon: Icons.password, ),
+            SizedBox(height: 20),
+            CustomTextField(hint: 'Token',icon: Icons.key,),
+          ],
+        ),
       ),
     );
   }
 }
-
-
