@@ -13,7 +13,7 @@ class MarbleAndAranite extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-            brightness: Brightness.dark,
+            brightness: Brightness.light,
             fontFamily: 'Tuffy',
             
             textTheme: const TextTheme(
@@ -30,8 +30,8 @@ class MarbleAndAranite extends StatelessWidget {
         HomePage.id: (context) => HomePage(),
         LoginPage.id: (context) => LoginPage(),
       },
-      initialRoute: HomePage.id,
-      
+     // initialRoute: HomePage.id,
+      home: LoginPage(),
     );
   }
 }
