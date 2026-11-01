@@ -33,7 +33,7 @@ class CustomTextField extends StatelessWidget {
         prefixIcon: Icon(icon),
         hintText: hint,
         border: buildBorder(),
-        enabledBorder: buildBorder(kIconColor),
+        enabledBorder: buildBorder(kTextColor),
         focusedBorder: buildBorder(kIconColor),
       ),
     );

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:marble_and_granite/Widgets/custom_bottom.dart';
 import 'package:marble_and_granite/Widgets/custom_text_feild.dart';
+import 'package:marble_and_granite/Widgets/logo.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -40,11 +42,15 @@ class LoginPage extends StatelessWidget {
               ),
             ),
             SizedBox(height: 20),
+            AlysarGraniteLogo(),
+            SizedBox(height: 20),
             CustomTextField(hint: 'User Name' ,icon: Icons.person,),
             SizedBox(height: 20),
             CustomTextField(hint: 'Password',icon: Icons.password, ),
             SizedBox(height: 20),
             CustomTextField(hint: 'Token',icon: Icons.key,),
+            SizedBox(height: 100),
+            CustomBotton(bottonName: 'Login')
           ],
         ),
       ),
