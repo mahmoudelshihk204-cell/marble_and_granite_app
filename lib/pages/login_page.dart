@@ -29,7 +29,8 @@ class LoginPage extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 50),
-        child: ListView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: 10),
             Text(
@@ -39,33 +40,37 @@ class LoginPage extends StatelessWidget {
                 fontSize: 35,
                 fontWeight: FontWeight.bold,
               ),
+              
             ),
-            SizedBox(height: 10),
-            Container(
-              height: 150,
-              width: 150,
-              color: Colors.grey,
-              child: Image.asset(
-                'assets/Images/Logo.png',
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Text(
-                    'Image Error: $error',
-                    style: const TextStyle(color: Colors.red),
-                  );
-                },
+            
+            Center(
+              child: SizedBox(
+                height: 230,
+                width: 200,
+                
+                child: Image.asset(
+                  'assets/Images/Logo.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Text(
+                      'Image Error: $error',
+                      style: const TextStyle(color: Colors.red),
+                    );
+                  },
+                ),
               ),
             ),
-            SizedBox(height: 10),
+            
             CustomTextField(hint: 'User Name', icon: Icons.person),
             SizedBox(height: 10),
             CustomTextField(hint: 'Password', icon: Icons.password),
             SizedBox(height: 10),
             CustomTextField(hint: 'Token', icon: Icons.key),
-            SizedBox(height: 50),
+            SizedBox(height: 40),
             CustomBotton(bottonName: 'Login'),
             SizedBox(height: 10),
             CustomBotton(bottonName: 'Offline Mode'),
+            SizedBox(height: 10),
           ],
         ),
       ),
