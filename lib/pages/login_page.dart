@@ -26,8 +26,9 @@ class LoginPage extends StatelessWidget {
           'Marble And Granite',
           style: TextStyle(
             fontFamily: 'Tuffy',
-            fontStyle: FontStyle.italic,
+            //fontStyle: FontStyle.italic,
             fontWeight: FontWeight.bold,
+            fontSize: 30
           ),
         ),
       ),
