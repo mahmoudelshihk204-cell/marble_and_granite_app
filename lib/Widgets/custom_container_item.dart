@@ -7,10 +7,10 @@ class CustomContainerItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 250, 190, 173), // كريمي مائل للأحمر
+        color: const Color.fromARGB(255, 250, 190, 173), 
         borderRadius: BorderRadius.circular(25),
         border: Border.all(
-          color: const Color(0xffB8864B), // ذهبي
+          color: const Color(0xffB8864B), 
           width: 1.5,
         ),
         boxShadow: [
