@@ -3,6 +3,7 @@ import 'package:marble_and_granite/Constant/constants.dart';
 import 'package:marble_and_granite/Widgets/custom_bottom.dart';
 import 'package:marble_and_granite/Widgets/custom_text_feild.dart';
 import 'package:marble_and_granite/Widgets/saved_bottom.dart';
+import 'package:marble_and_granite/pages/home_page.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -67,19 +68,37 @@ class LoginPage extends StatelessWidget {
               CustomTextField(hint: 'Password', icon: Icons.password),
               SizedBox(height: 10),
               CustomTextField(hint: 'Token', icon: Icons.key),
-              SizedBox(height: 40),
-               
-              Center(child: SavedBottom(bottonName: 'Saved account', containerColor: kTextColor)),
+              SizedBox(height: 60),
+
+              Center(
+                child: SavedBottom(
+                  bottonName: 'Saved account',
+                  containerColor: kTextColor,
+                ),
+              ),
               SizedBox(height: 10),
-              CustomBotton(bottonName: 'Login', containerColor: kTextColor),
-             
+              CustomBotton(
+                bottonName: 'Login',
+                containerColor: kTextColor,
+                ontap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) {
+                        return HomePage();
+                      },
+                    ),
+                  );
+                },
+              ),
+
               SizedBox(height: 10),
               CustomBotton(
                 bottonName: 'Offline Mode',
                 containerColor: Colors.blueAccent,
                 fontColor: Colors.white,
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 15),
             ],
           ),
         ),

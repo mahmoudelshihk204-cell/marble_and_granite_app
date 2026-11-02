@@ -16,25 +16,28 @@ class CustomTextField extends StatelessWidget {
   final IconData icon;
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      
-      onChanged: onChange,
-      onSaved: onSaved,
-      validator: (value) {
-        if (value?.isEmpty ?? true) {
-          return ('Feild is requird');
-        } else {
-          return null;
-        }
-      },
-      cursorColor: kIconColor,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        prefixIcon: Icon(icon),
-        hintText: hint,
-        border: buildBorder(),
-        enabledBorder: buildBorder(kTextColor),
-        focusedBorder: buildBorder(kIconColor),
+    return SizedBox(
+     height: 50,
+      child: TextFormField(
+        
+        onChanged: onChange,
+        onSaved: onSaved,
+        validator: (value) {
+          if (value?.isEmpty ?? true) {
+            return ('Feild is requird');
+          } else {
+            return null;
+          }
+        },
+        cursorColor: kIconColor,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          prefixIcon: Icon(icon),
+          hintText: hint,
+          border: buildBorder(),
+          enabledBorder: buildBorder(kTextColor),
+          focusedBorder: buildBorder(kIconColor),
+        ),
       ),
     );
   }
