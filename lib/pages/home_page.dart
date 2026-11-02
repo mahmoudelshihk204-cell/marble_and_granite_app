@@ -52,6 +52,8 @@ class HomePage extends StatelessWidget {
             CustomContainerItem(),
             SizedBox(height: 20),
             CustomContainerItem(),
+            SizedBox(height: 20),
+            CustomContainerItem(),
           ],
         ),
       ),
