@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:marble_and_granite/Widgets/custom_bottom.dart';
 import 'package:marble_and_granite/Widgets/custom_text_feild.dart';
-import 'package:marble_and_granite/Widgets/logo.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -13,14 +12,14 @@ class LoginPage extends StatelessWidget {
         backgroundColor: Colors.redAccent,
         elevation: 10,
         scrolledUnderElevation: 10,
-        shadowColor: Colors.black.withValues(alpha: .5, red: 12),
+        shadowColor: Colors.black.withValues(alpha: .5),
         surfaceTintColor: Colors.transparent,
         centerTitle: true,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
         ),
         title: Text(
-          'MarbleAndAranite',
+          'Marble And Granite',
           style: TextStyle(
             fontFamily: 'Tuffy',
             fontStyle: FontStyle.italic,
@@ -32,7 +31,7 @@ class LoginPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 50),
         child: ListView(
           children: [
-            SizedBox(height: 20),
+            SizedBox(height: 10),
             Text(
               'LogIn',
               style: TextStyle(
@@ -41,16 +40,32 @@ class LoginPage extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 20),
-            AlysarGraniteLogo(),
-            SizedBox(height: 20),
-            CustomTextField(hint: 'User Name' ,icon: Icons.person,),
-            SizedBox(height: 20),
-            CustomTextField(hint: 'Password',icon: Icons.password, ),
-            SizedBox(height: 20),
-            CustomTextField(hint: 'Token',icon: Icons.key,),
-            SizedBox(height: 100),
-            CustomBotton(bottonName: 'Login')
+            SizedBox(height: 10),
+            Container(
+              height: 150,
+              width: 150,
+              color: Colors.grey,
+              child: Image.asset(
+                'assets/Images/Logo.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Text(
+                    'Image Error: $error',
+                    style: const TextStyle(color: Colors.red),
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: 10),
+            CustomTextField(hint: 'User Name', icon: Icons.person),
+            SizedBox(height: 10),
+            CustomTextField(hint: 'Password', icon: Icons.password),
+            SizedBox(height: 10),
+            CustomTextField(hint: 'Token', icon: Icons.key),
+            SizedBox(height: 50),
+            CustomBotton(bottonName: 'Login'),
+            SizedBox(height: 10),
+            CustomBotton(bottonName: 'Offline Mode'),
           ],
         ),
       ),
