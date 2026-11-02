@@ -8,6 +8,7 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: Colors.redAccent,
         elevation: 10,
@@ -27,51 +28,53 @@ class LoginPage extends StatelessWidget {
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 50),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 10),
-            Text(
-              'LogIn',
-              style: TextStyle(
-                fontFamily: 'Tuffy',
-                fontSize: 35,
-                fontWeight: FontWeight.bold,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 50),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 10),
+              Text(
+                'LogIn',
+                style: TextStyle(
+                  fontFamily: 'Tuffy',
+                  fontSize: 35,
+                  fontWeight: FontWeight.bold,
+                ),
+                
               ),
               
-            ),
-            
-            Center(
-              child: SizedBox(
-                height: 230,
-                width: 200,
-                
-                child: Image.asset(
-                  'assets/Images/Logo.png',
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Text(
-                      'Image Error: $error',
-                      style: const TextStyle(color: Colors.red),
-                    );
-                  },
+              Center(
+                child: SizedBox(
+                  height: 230,
+                  width: 200,
+                  
+                  child: Image.asset(
+                    'assets/Images/Logo.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Text(
+                        'Image Error: $error',
+                        style: const TextStyle(color: Colors.red),
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-            
-            CustomTextField(hint: 'User Name', icon: Icons.person),
-            SizedBox(height: 10),
-            CustomTextField(hint: 'Password', icon: Icons.password),
-            SizedBox(height: 10),
-            CustomTextField(hint: 'Token', icon: Icons.key),
-            SizedBox(height: 40),
-            CustomBotton(bottonName: 'Login'),
-            SizedBox(height: 10),
-            CustomBotton(bottonName: 'Offline Mode'),
-            SizedBox(height: 10),
-          ],
+              
+              CustomTextField(hint: 'User Name', icon: Icons.person),
+              SizedBox(height: 10),
+              CustomTextField(hint: 'Password', icon: Icons.password),
+              SizedBox(height: 10),
+              CustomTextField(hint: 'Token', icon: Icons.key),
+              SizedBox(height: 40),
+              CustomBotton(bottonName: 'Login'),
+              SizedBox(height: 10),
+              CustomBotton(bottonName: 'Offline Mode'),
+              SizedBox(height: 10),
+            ],
+          ),
         ),
       ),
     );
