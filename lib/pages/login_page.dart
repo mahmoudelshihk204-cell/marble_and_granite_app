@@ -13,7 +13,7 @@ class LoginPage extends StatelessWidget {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: Colors.redAccent,
+                backgroundColor: Colors.redAccent,
         elevation: 10,
         scrolledUnderElevation: 10,
         shadowColor: Colors.black.withValues(alpha: .5),
@@ -32,75 +32,90 @@ class LoginPage extends StatelessWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 50),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 5),
-              Text(
-                'LogIn',
-                style: TextStyle(
-                  fontFamily: 'Tuffy',
-                  fontSize: 35,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Center(
-                child: SizedBox(
-                  height: 230,
-                  width: 200,
-                  child: Image.asset(
-                    'assets/Images/Logo.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Text(
-                        'Image Error: $error',
-                        style: const TextStyle(color: Colors.red),
+      body: Container(
+        width: double.infinity,
+    height: double.infinity,
+
+    decoration: const BoxDecoration(
+      image: DecorationImage(
+        image: kImage,
+        fit: BoxFit.cover,
+      ),
+    ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 50),
+              child: Column(
+                
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  
+                  SizedBox(height: 5),
+                  Text(
+                    'LogIn',
+                    style: TextStyle(
+                      fontFamily: 'Tuffy',
+                      fontSize: 35,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Center(
+                    child: SizedBox(
+                      height: 230,
+                      width: 200,
+                      child: Image.asset(
+                        'assets/Images/Logo.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Text(
+                            'Image Error: $error',
+                            style: const TextStyle(color: Colors.red),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+          
+                  CustomTextField(hint: 'User Name', icon: Icons.person),
+                  SizedBox(height: 3),
+                  CustomTextField(hint: 'Password', icon: Icons.password),
+                  SizedBox(height: 3),
+                  CustomTextField(hint: 'Token', icon: Icons.key),
+                  SizedBox(height: 50),
+          
+                  Center(
+                    child: SavedBottom(
+                      bottonName: 'Saved account',
+                      containerColor: kTextColor,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  CustomBotton(
+                    bottonName: 'Login',
+                    containerColor: kTextColor,
+                    ontap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) {
+                            return HomePage();
+                          },
+                        ),
                       );
                     },
                   ),
-                ),
+          
+                  SizedBox(height: 10),
+                  CustomBotton(
+                    bottonName: 'Offline Mode',
+                    containerColor: Colors.blueAccent,
+                    fontColor: Colors.white,
+                  ),
+                  SizedBox(height: 15),
+                ],
               ),
-
-              CustomTextField(hint: 'User Name', icon: Icons.person),
-              SizedBox(height: 10),
-              CustomTextField(hint: 'Password', icon: Icons.password),
-              SizedBox(height: 10),
-              CustomTextField(hint: 'Token', icon: Icons.key),
-              SizedBox(height: 60),
-
-              Center(
-                child: SavedBottom(
-                  bottonName: 'Saved account',
-                  containerColor: kTextColor,
-                ),
-              ),
-              SizedBox(height: 10),
-              CustomBotton(
-                bottonName: 'Login',
-                containerColor: kTextColor,
-                ontap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) {
-                        return HomePage();
-                      },
-                    ),
-                  );
-                },
-              ),
-
-              SizedBox(height: 10),
-              CustomBotton(
-                bottonName: 'Offline Mode',
-                containerColor: Colors.blueAccent,
-                fontColor: Colors.white,
-              ),
-              SizedBox(height: 15),
-            ],
+            ),
           ),
         ),
       ),

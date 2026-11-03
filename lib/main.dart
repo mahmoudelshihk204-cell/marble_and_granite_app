@@ -13,24 +13,25 @@ class MarbleAndAranite extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-            brightness: Brightness.light,
-            fontFamily: 'Tuffy',
-            
-            textTheme: const TextTheme(
-              headlineSmall: TextStyle(
-                fontSize: 25,
-                fontWeight: FontWeight.bold,
-                color: Colors.redAccent,
-                decoration: TextDecoration.none,
-              ),
-            ),
+        brightness: Brightness.light,
+        fontFamily: 'Tuffy',
+
+        textTheme: const TextTheme(
+          headlineSmall: TextStyle(
+            fontSize: 25,
+            fontWeight: FontWeight.bold,
+            color: Colors.redAccent,
+            decoration: TextDecoration.none,
           ),
+        ),
+      ),
       debugShowCheckedModeBanner: false,
+
       routes: {
         HomePage.id: (context) => HomePage(),
         LoginPage.id: (context) => LoginPage(),
       },
-     // initialRoute: HomePage.id,
+      // initialRoute: HomePage.id,
       home: LoginPage(),
     );
   }

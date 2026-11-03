@@ -17,9 +17,9 @@ class CustomTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-     height: 50,
+     height: 60,
       child: TextFormField(
-        
+        maxLength: 100,
         onChanged: onChange,
         onSaved: onSaved,
         validator: (value) {
