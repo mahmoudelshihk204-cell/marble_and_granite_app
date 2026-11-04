@@ -20,7 +20,7 @@ class MarbleAndAranite extends StatelessWidget {
           headlineSmall: TextStyle(
             fontSize: 25,
             fontWeight: FontWeight.bold,
-            color: Colors.redAccent,
+            color: Color.fromARGB(255, 0, 0, 0),
             decoration: TextDecoration.none,
           ),
         ),

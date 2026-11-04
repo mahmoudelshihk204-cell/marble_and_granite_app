@@ -7,7 +7,7 @@ class SavedBottom extends StatelessWidget {
     super.key,
     required this.bottonName,
     this.ontap,
-    this.isloading = false, required this.containerColor,  this.fontColor =Colors.black,
+    this.isloading = false, required this.containerColor,  this.fontColor =const Color.fromARGB(255, 255, 255, 255),
   });
   final Color containerColor;
   final Color fontColor;

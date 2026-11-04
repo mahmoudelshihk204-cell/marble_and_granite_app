@@ -13,7 +13,7 @@ class LoginPage extends StatelessWidget {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-                backgroundColor: Colors.redAccent,
+                backgroundColor: const Color.fromARGB(255, 0, 0, 0),
         elevation: 10,
         scrolledUnderElevation: 10,
         shadowColor: Colors.black.withValues(alpha: .5),
@@ -27,8 +27,9 @@ class LoginPage extends StatelessWidget {
           style: TextStyle(
             fontFamily: 'Tuffy',
             //fontStyle: FontStyle.italic,
-            fontWeight: FontWeight.bold,
-            fontSize: 30
+            fontWeight: FontWeight.w900,
+            fontSize: 30,
+            color: Colors.white
           ),
         ),
       ),
@@ -87,7 +88,7 @@ class LoginPage extends StatelessWidget {
                   Center(
                     child: SavedBottom(
                       bottonName: 'Saved account',
-                      containerColor: kTextColor,
+                      containerColor: const Color.fromARGB(255, 96, 96, 96),
                     ),
                   ),
                   SizedBox(height: 10),
@@ -109,7 +110,7 @@ class LoginPage extends StatelessWidget {
                   SizedBox(height: 10),
                   CustomBotton(
                     bottonName: 'Offline Mode',
-                    containerColor: Colors.blueAccent,
+                    containerColor: const Color.fromARGB(255, 96, 96, 96),
                     fontColor: Colors.white,
                   ),
                   SizedBox(height: 15),

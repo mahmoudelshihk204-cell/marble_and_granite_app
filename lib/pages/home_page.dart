@@ -10,7 +10,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.redAccent,
+        backgroundColor: Colors.black,
         elevation: 10,
         scrolledUnderElevation: 10,
         shadowColor: Colors.black.withValues(alpha: .5),
@@ -26,19 +26,17 @@ class HomePage extends StatelessWidget {
             //  fontStyle: FontStyle.italic,
             fontWeight: FontWeight.w900,
             fontSize: 30,
+            color: Colors.white,
           ),
         ),
       ),
       body: Container(
         width: double.infinity,
-    height: double.infinity,
+        height: double.infinity,
 
-    decoration: const BoxDecoration(
-      image: DecorationImage(
-        image: kImage,
-        fit: BoxFit.cover,
-      ),
-    ),
+        decoration: const BoxDecoration(
+          image: DecorationImage(image: kImage, fit: BoxFit.cover),
+        ),
         child: SafeArea(
           child: Center(
             child: Column(
@@ -53,12 +51,15 @@ class HomePage extends StatelessWidget {
                     fontFamily: 'Geist_Pixel',
                   ),
                 ),
-                Text(
-                  'Please select the way you want to search',
-                  style: TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Geist_Pixel',
+                Padding(
+                  padding: const EdgeInsets.only(left: 25),
+                  child: Text(
+                    'Please select the way you want to search',
+                    style: TextStyle(
+                      fontSize: 25,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Geist_Pixel',
+                    ),
                   ),
                 ),
                 SizedBox(height: 50),
@@ -67,9 +68,10 @@ class HomePage extends StatelessWidget {
                   onTap: () async {
                     final result = await Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const ScannerPage()),
+                      MaterialPageRoute(
+                        builder: (context) => const ScannerPage(),
+                      ),
                     );
-          
                     if (result != null) {
                       // ignore: avoid_print
                       print('Scanned Code: $result');
