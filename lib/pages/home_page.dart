@@ -24,9 +24,9 @@ class HomePage extends StatelessWidget {
           style: TextStyle(
             fontFamily: 'Tuffy',
             //  fontStyle: FontStyle.italic,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.bold,
             fontSize: 30,
-            color: Colors.white,
+            color: Color(0xffC5A46D),
           ),
         ),
       ),
@@ -77,11 +77,12 @@ class HomePage extends StatelessWidget {
                       print('Scanned Code: $result');
                     }
                   },
+                  icon: Icons.qr_code_scanner,
                 ),
                 SizedBox(height: 20),
-                CustomContainerItem(containerName: 'Manual Barcode'),
+                CustomContainerItem(containerName: 'Manual BarCode' , icon: Icons.import_contacts ,),
                 SizedBox(height: 20),
-                CustomContainerItem(containerName: 'Manual Block Code'),
+                CustomContainerItem(containerName: 'Manual Block Code' , icon: Icons.numbers,),
               ],
             ),
           ),

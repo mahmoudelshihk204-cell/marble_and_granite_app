@@ -27,9 +27,9 @@ class LoginPage extends StatelessWidget {
           style: TextStyle(
             fontFamily: 'Tuffy',
             //fontStyle: FontStyle.italic,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.bold,
             fontSize: 30,
-            color: Colors.white
+            color: Color(0xffC5A46D)
           ),
         ),
       ),

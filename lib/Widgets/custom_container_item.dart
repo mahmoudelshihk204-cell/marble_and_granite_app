@@ -2,41 +2,101 @@ import 'package:flutter/material.dart';
 
 // ignore: must_be_immutable
 class CustomContainerItem extends StatelessWidget {
-   CustomContainerItem({super.key, required this.containerName , this.onTap});
+  CustomContainerItem({
+    super.key,
+    required this.containerName,
+    this.onTap,
+    this.icon,
+  });
   final String containerName;
   void Function()? onTap;
+  final IconData? icon;
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap ,
+      onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 250, 190, 173), 
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(
-            color: const Color(0xffB8864B), 
-            width: 1.5,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xffFFFFFF), Color(0xffF5F0E6), Color(0xffEDE3D2)],
           ),
+
+          borderRadius: BorderRadius.circular(28),
+
+          border: Border.all(color: const Color(0xffC5A46D), width: 1.4),
+
           boxShadow: [
+            // Deep floating shadow
             BoxShadow(
-              color: const Color(0xff8B0000).withValues(alpha: 0.12),
-              blurRadius: 18,
+              color: const Color(0xff000000).withValues(alpha: 0.16),
+              blurRadius: 30,
               spreadRadius: 2,
-              offset: const Offset(0, 7),
+              offset: const Offset(0, 15),
+            ),
+
+            // Golden glow
+            BoxShadow(
+              color: const Color(0xffC5A46D).withValues(alpha: 0.20),
+              blurRadius: 18,
+              spreadRadius: -2,
+              offset: const Offset(0, 5),
+            ),
+
+            // Top highlight
+            BoxShadow(
+              color: Colors.white.withValues(alpha: 0.9),
+              blurRadius: 8,
+              offset: const Offset(-4, -4),
             ),
           ],
         ),
         height: 100,
         width: 200,
-        child: Center(
-          child: Text(
-            containerName,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Tuffy',
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Container(
+                width: 70,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xffC5A46D),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
-          ),
+            Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  IconButton(
+                    onPressed: () {},
+                    icon: Icon(icon, size: 25),
+                    padding: EdgeInsets.symmetric(horizontal: 0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: Container(width: 1, height: 50, color: const Color(0xffC5A46D)),
+                  ),
+                  Expanded(
+                    child: Text(
+                      containerName,
+                      softWrap: true,
+                      textAlign: TextAlign.start,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Tuffy',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
