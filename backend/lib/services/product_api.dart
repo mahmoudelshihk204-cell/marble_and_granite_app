@@ -43,6 +43,42 @@ class ProductApi {
       }
     });
 
+    router.get('/products/barcode/<barcode>', (
+      Request request,
+      String barcode,
+    ) async {
+      try {
+        final product = await productRepository.getProductByBarcode(barcode);
+
+        if (product == null) {
+          return Response(
+            404,
+            body: jsonEncode({
+              'success': false,
+              'message': 'Product not found',
+            }),
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }
+
+        return Response.ok(
+          jsonEncode({'success': true, 'data': product.toJson()}),
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        );
+      } catch (error) {
+        print('Error searching product by barcode: $error');
+
+        return Response(
+          500,
+          body: jsonEncode({
+            'success': false,
+            'message': 'Failed to search product',
+          }),
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        );
+      }
+    });
+
     return router;
   }
 }

@@ -27,4 +27,30 @@ class ProductApiService {
 
     throw Exception('Server Error: ${response.statusCode}');
   }
+
+  Future<ProductModel?> getProductByBarcode(String barcode) async {
+    final url = Uri.parse(
+      '$baseUrl/products/barcode/${Uri.encodeComponent(barcode)}',
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 404) {
+      return null;
+    }
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (responseData['success'] == true) {
+        final productData = Map<String, dynamic>.from(responseData['data']);
+
+        return ProductModel.fromJson(productData);
+      }
+
+      throw Exception('Failed to search product');
+    }
+
+    throw Exception('Server Error: ${response.statusCode}');
+  }
 }

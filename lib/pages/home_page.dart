@@ -2,10 +2,96 @@ import 'package:flutter/material.dart';
 import 'package:marble_and_granite/Constant/constants.dart';
 import 'package:marble_and_granite/Widgets/custom_container_item.dart';
 import 'package:marble_and_granite/pages/scanner_page.dart';
+import 'package:marble_and_granite/pages/products_page.dart';
+import 'package:marble_and_granite/services/product_api_service.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
   static String id = 'HomePage';
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool isSearching = false;
+
+  Future<void> scanBarcode() async {
+    final String? barcode = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (context) => const ScannerPage()),
+    );
+
+    if (barcode == null || barcode.isEmpty || !mounted) {
+      return;
+    }
+
+    setState(() {
+      isSearching = true;
+    });
+
+    try {
+      final product = await ProductApiService().getProductByBarcode(barcode);
+
+      if (!mounted) return;
+
+      setState(() {
+        isSearching = false;
+      });
+
+      if (product == null) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Product Not Found'),
+            content: Text('No product found for barcode: $barcode'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(product.productName),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Barcode: $barcode'),
+              Text('Produced: ${product.producedQty}'),
+              Text('Sold: ${product.soldQty}'),
+              Text('Central Stock: ${product.centralStockQty}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        isSearching = false;
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $error')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -19,11 +105,10 @@ class HomePage extends StatelessWidget {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
         ),
-        title: Text(
+        title: const Text(
           'Marble And Granite',
           style: TextStyle(
             fontFamily: 'Tuffy',
-            //  fontStyle: FontStyle.italic,
             fontWeight: FontWeight.bold,
             fontSize: 30,
             color: Color(0xffC5A46D),
@@ -33,7 +118,6 @@ class HomePage extends StatelessWidget {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-
         decoration: const BoxDecoration(
           image: DecorationImage(image: kImage, fit: BoxFit.cover),
         ),
@@ -42,8 +126,8 @@ class HomePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: 10),
-                Text(
+                const SizedBox(height: 10),
+                const Text(
                   'Welcome To Our Company',
                   style: TextStyle(
                     fontSize: 25,
@@ -51,8 +135,8 @@ class HomePage extends StatelessWidget {
                     fontFamily: 'Geist_Pixel',
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 25),
+                const Padding(
+                  padding: EdgeInsets.only(left: 25),
                   child: Text(
                     'Please select the way you want to search',
                     style: TextStyle(
@@ -62,29 +146,42 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(height: 50),
+                const SizedBox(height: 50),
+
                 CustomContainerItem(
                   containerName: 'Scan Barcode',
-                  onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ScannerPage(),
-                      ),
-                    );
-                    if (result != null) {
-                      // ignore: avoid_print
-                      print('Scanned Code: $result');
-                    }
-                  },
+                  onTap: isSearching ? null : scanBarcode,
                   icon: Icons.qr_code_scanner,
                 ),
-                SizedBox(height: 20),
+
+                if (isSearching) ...[
+                  const SizedBox(height: 12),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 8),
+                  const Text('Searching product...'),
+                ],
+
+                const SizedBox(height: 20),
+
+                CustomContainerItem(
+                  containerName: 'View Products',
+                  icon: Icons.inventory_2,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProductsPage(),
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 20),
                 CustomContainerItem(
                   containerName: 'Manual BarCode',
                   icon: Icons.import_contacts,
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 CustomContainerItem(
                   containerName: 'Manual Block Code',
                   icon: Icons.numbers,

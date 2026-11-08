@@ -23,4 +23,24 @@ class ProductRepository {
       return ProductModel.fromRow(row);
     }).toList();
   }
+
+  Future<ProductModel?> getProductByBarcode(String barcode) async {
+    const query = '''
+    SELECT PRODUCT_ID,
+           PRODUCT_NAME,
+           PRODUCED_QTY,
+           SOLD_QTY,
+           CENTRAL_STOCK_QTY
+    FROM PRODUCTS
+    WHERE BARCODE = :barcode
+  ''';
+
+    final result = await connection.execute(query, {'barcode': barcode});
+
+    if (result.rows.isEmpty) {
+      return null;
+    }
+
+    return ProductModel.fromRow(result.rows.first);
+  }
 }
