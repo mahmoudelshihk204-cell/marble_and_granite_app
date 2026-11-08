@@ -23,12 +23,12 @@ class ProductModel {
     );
   }
   Map<String, dynamic> toJson() {
-  return {
-    'productId': productId,
-    'productName': productName,
-    'producedQty': producedQty,
-    'soldQty': soldQty,
-    'centralStockQty': centralStockQty,
-  };
-}
+    return {
+      'productId': productId,
+      'productName': productName,
+      'producedQty': producedQty,
+      'soldQty': soldQty,
+      'centralStockQty': centralStockQty,
+    };
+  }
 }
