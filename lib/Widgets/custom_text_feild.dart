@@ -6,7 +6,9 @@ class CustomTextField extends StatelessWidget {
     super.key,
     required this.hint,
     this.maxLines = 1,
-    this.onSaved, this.onChange, required this.icon,
+    this.onSaved,
+    this.onChange,
+    required this.icon,
   });
 
   final String hint;
@@ -17,7 +19,7 @@ class CustomTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-     height: 60,
+      height: 60,
       child: TextFormField(
         maxLength: 100,
         onChanged: onChange,

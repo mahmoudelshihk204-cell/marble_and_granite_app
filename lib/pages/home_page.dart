@@ -80,9 +80,15 @@ class HomePage extends StatelessWidget {
                   icon: Icons.qr_code_scanner,
                 ),
                 SizedBox(height: 20),
-                CustomContainerItem(containerName: 'Manual BarCode' , icon: Icons.import_contacts ,),
+                CustomContainerItem(
+                  containerName: 'Manual BarCode',
+                  icon: Icons.import_contacts,
+                ),
                 SizedBox(height: 20),
-                CustomContainerItem(containerName: 'Manual Block Code' , icon: Icons.numbers,),
+                CustomContainerItem(
+                  containerName: 'Manual Block Code',
+                  icon: Icons.numbers,
+                ),
               ],
             ),
           ),

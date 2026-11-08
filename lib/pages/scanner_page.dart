@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -11,9 +10,7 @@ class ScannerPage extends StatefulWidget {
 
 class _ScannerPageState extends State<ScannerPage>
     with SingleTickerProviderStateMixin {
-
-  final MobileScannerController controller =
-      MobileScannerController();
+  final MobileScannerController controller = MobileScannerController();
 
   bool isScanned = false;
 
@@ -29,14 +26,8 @@ class _ScannerPageState extends State<ScannerPage>
       duration: const Duration(seconds: 2),
     );
 
-    scanAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(
-      CurvedAnimation(
-        parent: animationController,
-        curve: Curves.easeInOut,
-      ),
+    scanAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
     );
 
     animationController.repeat(reverse: true);
@@ -68,9 +59,7 @@ class _ScannerPageState extends State<ScannerPage>
         surfaceTintColor: Colors.transparent,
         centerTitle: true,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(30),
-          ),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
         ),
       ),
 
@@ -81,7 +70,6 @@ class _ScannerPageState extends State<ScannerPage>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-
               const Text(
                 'Scan Your Product',
                 style: TextStyle(
@@ -96,10 +84,7 @@ class _ScannerPageState extends State<ScannerPage>
 
               const Text(
                 'Place the barcode inside the frame',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.white70, fontSize: 14),
               ),
 
               const SizedBox(height: 35),
@@ -117,8 +102,7 @@ class _ScannerPageState extends State<ScannerPage>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xffC5A46D)
-                            .withValues(alpha: 0.2),
+                        color: const Color(0xffC5A46D).withValues(alpha: 0.2),
                         blurRadius: 25,
                         spreadRadius: 3,
                       ),
@@ -130,11 +114,9 @@ class _ScannerPageState extends State<ScannerPage>
 
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-
                         return Stack(
                           fit: StackFit.expand,
                           children: [
-
                             // Camera
                             MobileScanner(
                               controller: controller,
@@ -144,8 +126,7 @@ class _ScannerPageState extends State<ScannerPage>
                                 final barcodes = capture.barcodes;
 
                                 if (barcodes.isNotEmpty) {
-                                  final String? code =
-                                      barcodes.first.rawValue;
+                                  final String? code = barcodes.first.rawValue;
 
                                   if (code != null) {
                                     isScanned = true;
@@ -159,7 +140,6 @@ class _ScannerPageState extends State<ScannerPage>
                             AnimatedBuilder(
                               animation: scanAnimation,
                               builder: (context, child) {
-
                                 final double topPosition =
                                     12 +
                                     (constraints.maxHeight - 24) *
@@ -175,13 +155,13 @@ class _ScannerPageState extends State<ScannerPage>
 
                                     decoration: BoxDecoration(
                                       color: const Color(0xffE5BD76),
-                                      borderRadius:
-                                          BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(10),
 
                                       boxShadow: [
                                         BoxShadow(
-                                          color: const Color(0xffE5BD76)
-                                              .withValues(alpha: 0.8),
+                                          color: const Color(
+                                            0xffE5BD76,
+                                          ).withValues(alpha: 0.8),
                                           blurRadius: 12,
                                           spreadRadius: 2,
                                         ),

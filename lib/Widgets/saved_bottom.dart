@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
-
 // ignore: must_be_immutable
 class SavedBottom extends StatelessWidget {
   SavedBottom({
     super.key,
     required this.bottonName,
     this.ontap,
-    this.isloading = false, required this.containerColor,  this.fontColor =const Color.fromARGB(255, 255, 255, 255),
+    this.isloading = false,
+    required this.containerColor,
+    this.fontColor = const Color.fromARGB(255, 255, 255, 255),
   });
   final Color containerColor;
   final Color fontColor;

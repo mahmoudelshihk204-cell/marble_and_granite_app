@@ -13,7 +13,7 @@ class LoginPage extends StatelessWidget {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-                backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
         elevation: 10,
         scrolledUnderElevation: 10,
         shadowColor: Colors.black.withValues(alpha: .5),
@@ -29,29 +29,24 @@ class LoginPage extends StatelessWidget {
             //fontStyle: FontStyle.italic,
             fontWeight: FontWeight.bold,
             fontSize: 30,
-            color: Color(0xffC5A46D)
+            color: Color(0xffC5A46D),
           ),
         ),
       ),
       body: Container(
         width: double.infinity,
-    height: double.infinity,
+        height: double.infinity,
 
-    decoration: const BoxDecoration(
-      image: DecorationImage(
-        image: kImage,
-        fit: BoxFit.cover,
-      ),
-    ),
+        decoration: const BoxDecoration(
+          image: DecorationImage(image: kImage, fit: BoxFit.cover),
+        ),
         child: SafeArea(
           child: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 50),
               child: Column(
-                
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  
                   SizedBox(height: 5),
                   Text(
                     'LogIn',
@@ -77,14 +72,14 @@ class LoginPage extends StatelessWidget {
                       ),
                     ),
                   ),
-          
+
                   CustomTextField(hint: 'User Name', icon: Icons.person),
                   SizedBox(height: 3),
                   CustomTextField(hint: 'Password', icon: Icons.password),
                   SizedBox(height: 3),
                   CustomTextField(hint: 'Token', icon: Icons.key),
                   SizedBox(height: 50),
-          
+
                   Center(
                     child: SavedBottom(
                       bottonName: 'Saved account',
@@ -106,7 +101,7 @@ class LoginPage extends StatelessWidget {
                       );
                     },
                   ),
-          
+
                   SizedBox(height: 10),
                   CustomBotton(
                     bottonName: 'Offline Mode',

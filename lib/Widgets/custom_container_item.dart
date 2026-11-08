@@ -79,7 +79,11 @@ class CustomContainerItem extends StatelessWidget {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(right: 10),
-                    child: Container(width: 1, height: 50, color: const Color(0xffC5A46D)),
+                    child: Container(
+                      width: 1,
+                      height: 50,
+                      color: const Color(0xffC5A46D),
+                    ),
                   ),
                   Expanded(
                     child: Text(
