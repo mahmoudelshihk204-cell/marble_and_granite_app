@@ -1,72 +1,34 @@
-
-import 'dart:io';
-import 'package:oracledb/oracledb.dart';
+import 'package:backend/database/oracle_connection.dart';
+import 'package:backend/repositories/product_repository.dart';
 
 Future<void> main() async {
-  final host = Platform.environment['ORACLE_HOST'] ?? '127.0.0.1';
-  final port = Platform.environment['ORACLE_PORT'] ?? '1521';
-  final service =
-      Platform.environment['ORACLE_SERVICE'] ?? 'PDBORCL';
-
-  final user = Platform.environment['ORACLE_USER'] ?? 'MARBLE_APP';
-  final password = Platform.environment['ORACLE_PASSWORD'] ?? '';
-
-  if (password.isEmpty) {
-    print('Error: ORACLE_PASSWORD is not configured.');
-    return;
-  }
-
-  final connectString = '$host:$port/$service';
-
-  OracleConnection? connection;
+  final database = OracleDatabase();
 
   try {
-    print('Connecting to Oracle Database...');
+    final connection = await database.connect();
 
-    connection = await OracleConnection.connect(
-      connectString,
-      user: user,
-      password: password,
-      timeout: const Duration(seconds: 30),
-    );
+    final productRepository = ProductRepository(connection: connection);
 
-    print('Connected successfully!');
+    print('\nFetching products...\n');
 
-    print('\nReading products...');
+    final products = await productRepository.getAllProducts();
 
-    final result = await connection.execute('''
-      SELECT PRODUCT_ID,
-             PRODUCT_NAME,
-             PRODUCED_QTY,
-             SOLD_QTY,
-             CENTRAL_STOCK_QTY
-      FROM PRODUCTS
-      ORDER BY PRODUCT_ID
-    ''');
-
-    print('\n========== PRODUCTS ==========');
-
-    for (final row in result.rows) {
+    for (final product in products) {
       print('''
-Product ID: ${row['PRODUCT_ID']}
-Name: ${row['PRODUCT_NAME']}
-Produced: ${row['PRODUCED_QTY']}
-Sold: ${row['SOLD_QTY']}
-Central Stock: ${row['CENTRAL_STOCK_QTY']}
--------------------------------
+Product ID: ${product.productId}
+Name: ${product.productName}
+Produced: ${product.producedQty}
+Sold: ${product.soldQty}
+Central Stock: ${product.centralStockQty}
+------------------------------
 ''');
     }
 
-    print('Total products retrieved: ${result.rows.length}');
-    print('Database test completed successfully!');
-
+    print('Total products: ${products.length}');
+    print('Repository test successful!');
   } catch (e) {
-    print('\nDATABASE CONNECTION / QUERY ERROR:');
-    print(e);
+    print('Error: $e');
   } finally {
-    if (connection != null) {
-      await connection.close();
-      print('\nOracle connection closed.');
-    }
+    await database.close();
   }
 }
