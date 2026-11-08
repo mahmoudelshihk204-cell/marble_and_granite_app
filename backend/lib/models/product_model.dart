@@ -1,4 +1,3 @@
-
 class ProductModel {
   final int productId;
   final String productName;
@@ -20,8 +19,16 @@ class ProductModel {
       productName: row['PRODUCT_NAME'].toString(),
       producedQty: (row['PRODUCED_QTY'] as num).toInt(),
       soldQty: (row['SOLD_QTY'] as num).toInt(),
-      centralStockQty:
-          (row['CENTRAL_STOCK_QTY'] as num).toInt(),
+      centralStockQty: (row['CENTRAL_STOCK_QTY'] as num).toInt(),
     );
   }
+  Map<String, dynamic> toJson() {
+  return {
+    'productId': productId,
+    'productName': productName,
+    'producedQty': producedQty,
+    'soldQty': soldQty,
+    'centralStockQty': centralStockQty,
+  };
+}
 }

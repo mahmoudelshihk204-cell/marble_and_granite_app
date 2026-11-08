@@ -20,7 +20,7 @@ class ProductRepository {
     final result = await connection.execute(query);
 
     return result.rows.map((row) {
-     return ProductModel.fromRow(row);
+      return ProductModel.fromRow(row);
     }).toList();
   }
 }
