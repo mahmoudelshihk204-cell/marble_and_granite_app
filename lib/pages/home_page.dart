@@ -4,6 +4,7 @@ import 'package:marble_and_granite/Widgets/custom_container_item.dart';
 import 'package:marble_and_granite/pages/scanner_page.dart';
 import 'package:marble_and_granite/pages/products_page.dart';
 import 'package:marble_and_granite/services/product_api_service.dart';
+import 'package:marble_and_granite/pages/product_details_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,18 +16,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final TextEditingController barcodeController = TextEditingController();
   bool isSearching = false;
 
-  Future<void> scanBarcode() async {
-    final String? barcode = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(builder: (context) => const ScannerPage()),
-    );
-
-    if (barcode == null || barcode.isEmpty || !mounted) {
-      return;
-    }
-
+  Future<void> searchProduct(String barcode) async {
     setState(() {
       isSearching = true;
     });
@@ -57,26 +50,11 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(product.productName),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Barcode: $barcode'),
-              Text('Produced: ${product.producedQty}'),
-              Text('Sold: ${product.soldQty}'),
-              Text('Central Stock: ${product.centralStockQty}'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              ProductDetailsPage(product: product, barcode: barcode),
         ),
       );
     } catch (error) {
@@ -92,9 +70,85 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> scanBarcode() async {
+    final String? barcode = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (context) => const ScannerPage()),
+    );
+
+    if (barcode == null || barcode.trim().isEmpty || !mounted) {
+      return;
+    }
+
+    await searchProduct(barcode.trim());
+  }
+
+  // فتح نافذة إدخال Barcode يدويًا.
+  Future<void> manualBarcode() async {
+    // نمسح أي رقم قديم قبل فتح النافذة.
+    barcodeController.clear();
+
+    // نعرض Dialog وننتظر الرقم اللي المستخدم هيدخله.
+    final barcode = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        // يسمح بمراعاة المساحة المتاحة عند ظهور الكيبورد.
+        scrollable: true,
+
+        title: const Text('Enter Barcode'),
+
+        content: TextField(
+          // ربط TextField بالـController الموجود في State.
+          controller: barcodeController,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            hintText: 'Enter product barcode',
+            prefixIcon: Icon(Icons.qr_code),
+            border: OutlineInputBorder(),
+          ),
+        ),
+
+        actions: [
+          // إغلاق النافذة بدون البحث.
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+            },
+            child: const Text('Cancel'),
+          ),
+
+          // إغلاق النافذة وإرجاع الرقم المكتوب.
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext, barcodeController.text.trim());
+            },
+            child: const Text('Search'),
+          ),
+        ],
+      ),
+    );
+
+    // لو المستخدم ألغى أو الصفحة اتقفلت، مش هنكمل.
+    if (barcode == null || barcode.isEmpty || !mounted) {
+      return;
+    }
+
+    // البحث عن المنتج باستخدام نفس دالة البحث المستخدمة في الكاميرا.
+    await searchProduct(barcode);
+  }
+
+  // التخلص من الـController عند إزالة الصفحة نهائيًا.
+  @override
+  void dispose() {
+    barcodeController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 10,
@@ -180,6 +234,7 @@ class _HomePageState extends State<HomePage> {
                 CustomContainerItem(
                   containerName: 'Manual BarCode',
                   icon: Icons.import_contacts,
+                  onTap: isSearching ? null : manualBarcode,
                 ),
                 const SizedBox(height: 20),
                 CustomContainerItem(
