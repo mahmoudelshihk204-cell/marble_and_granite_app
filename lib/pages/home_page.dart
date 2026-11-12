@@ -5,6 +5,7 @@ import 'package:marble_and_granite/pages/scanner_page.dart';
 import 'package:marble_and_granite/pages/products_page.dart';
 import 'package:marble_and_granite/services/product_api_service.dart';
 import 'package:marble_and_granite/pages/product_details_page.dart';
+import 'package:marble_and_granite/pages/legacy_api_test_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -232,9 +233,16 @@ class _HomePageState extends State<HomePage> {
 
                 const SizedBox(height: 20),
                 CustomContainerItem(
-                  containerName: 'Manual BarCode',
-                  icon: Icons.import_contacts,
-                  onTap: isSearching ? null : manualBarcode,
+                  containerName: 'Manual Block Code',
+                  icon: Icons.numbers,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LegacyApiTestPage(),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 20),
                 CustomContainerItem(

@@ -1,4 +1,3 @@
-
 // Model بيمثل بيانات الصنف المستخرجة من قاعدة البيانات الأصلية.
 //
 // بنستخدم String للأكواد لأن Oracle مخزنها VARCHAR2،
@@ -75,11 +74,20 @@ class LegacyItemModel {
   }
 
   // Model بيمثل بيانات الصنف المستخرجة من قاعدة البيانات الأصلية.
-//
-// بنستخدم String للأكواد لأن Oracle مخزنها VARCHAR2،
+  //
+  // بنستخدم String للأكواد لأن Oracle مخزنها VARCHAR2،
+
+  // تحويل بيانات Oracle إلى Model خاص بالصنف.
   factory LegacyItemModel.fromMap(Map<String, dynamic> map) {
+    // نتأكد إن كود الصنف موجود قبل إنشاء الـ Model.
+    final itemCodeValue = map['ITEM_CODE'];
+
+    if (itemCodeValue == null) {
+      throw const FormatException('ITEM_CODE is missing');
+    }
+
     return LegacyItemModel(
-      itemCode: map['ITEM_CODE'].toString(),
+      itemCode: itemCodeValue.toString(),
       itemName: _stringValue(map['ITEM_NAME']),
       alternateCode: _stringValue(map['ITEM_CODE2']),
       itemName2: _stringValue(map['ITEM_NAME2']),

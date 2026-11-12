@@ -52,10 +52,23 @@ static bool _boolValue(Object? value) {
   return normalized == '1' || normalized == 'Y';
 }
 
+  // تحويل بيانات الوحدة والأسعار القادمة من Oracle إلى Model.
   factory LegacyUnitModel.fromMap(Map<String, dynamic> map) {
+    // نتأكد إن كود الصنف وكود الوحدة موجودين.
+    final itemCodeValue = map['ITEM_CODE'];
+    final unitCodeValue = map['UNIT_CODE'];
+
+    if (itemCodeValue == null) {
+      throw const FormatException('ITEM_CODE is missing');
+    }
+
+    if (unitCodeValue == null) {
+      throw const FormatException('UNIT_CODE is missing');
+    }
+
     return LegacyUnitModel(
-      itemCode: map['ITEM_CODE'].toString(),
-      unitCode: map['UNIT_CODE'].toString(),
+      itemCode: itemCodeValue.toString(),
+      unitCode: unitCodeValue.toString(),
       unitName: _stringValue(map['UNIT_NAME']),
       secondaryUnitName: _stringValue(map['UNIT_NAME2']),
 
@@ -70,6 +83,7 @@ static bool _boolValue(Object? value) {
       unitValue: _numberValue(map['UNIT_VAL']),
     );
   }
+
 
   Map<String, dynamic> toJson() {
     return {

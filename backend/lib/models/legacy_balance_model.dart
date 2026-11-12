@@ -1,4 +1,3 @@
-
 // بيانات رصيد صنف معين داخل مخزن معين.
 class LegacyBalanceModel {
   final String itemCode;
@@ -40,10 +39,23 @@ class LegacyBalanceModel {
     return DateTime.tryParse(value.toString());
   }
 
+  // تحويل بيانات الرصيد القادمة من Oracle إلى Model.
   factory LegacyBalanceModel.fromMap(Map<String, dynamic> map) {
+    // لازم يكون كود الصنف وكود المخزن موجودين.
+    final itemCodeValue = map['ITEM_CODE'];
+    final branchCodeValue = map['BRAN_CODE'];
+
+    if (itemCodeValue == null) {
+      throw const FormatException('ITEM_CODE is missing');
+    }
+
+    if (branchCodeValue == null) {
+      throw const FormatException('BRAN_CODE is missing');
+    }
+
     return LegacyBalanceModel(
-      itemCode: map['ITEM_CODE'].toString(),
-      branchCode: map['BRAN_CODE'].toString(),
+      itemCode: itemCodeValue.toString(),
+      branchCode: branchCodeValue.toString(),
       branchName: _stringValue(map['BRANCH_NAME']),
       balance: _numberValue(map['BAL']),
       negativeBalance: _numberValue(map['NBAL']),
