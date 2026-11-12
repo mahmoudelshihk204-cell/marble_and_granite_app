@@ -39,6 +39,7 @@ dependencies:
   mobile_scanner: ^7.5.0
   oracledb: ^1.6.0
   http: ^1.6.0
+  flutter_bloc: ^9.1.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

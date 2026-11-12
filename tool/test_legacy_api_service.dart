@@ -1,4 +1,6 @@
 
+// ignore_for_file: avoid_print
+
 import '../lib/services/legacy/legacy_api_service.dart';
 
 Future<void> main() async {
