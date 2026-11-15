@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:marble_and_granite/Constant/constants.dart';
 import 'package:marble_and_granite/Widgets/custom_container_item.dart';
+import 'package:marble_and_granite/pages/barcode_search_page.dart';
 import 'package:marble_and_granite/pages/scanner_page.dart';
 import 'package:marble_and_granite/pages/products_page.dart';
 import 'package:marble_and_granite/services/product_api_service.dart';
@@ -244,7 +245,21 @@ class _HomePageState extends State<HomePage> {
                     );
                   },
                 ),
-                
+                const SizedBox(height: 20),
+
+// البحث عن صنف المخزون باستخدام Barcode من قاعدة بيانات Oracle.
+CustomContainerItem(
+  containerName: 'Search Stock by Barcode',
+  icon: Icons.qr_code_2,
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const BarcodeSearchPage(),
+      ),
+    );
+  },
+),
               ],
             ),
           ),

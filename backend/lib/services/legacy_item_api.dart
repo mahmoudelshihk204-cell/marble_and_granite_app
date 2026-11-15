@@ -1,4 +1,6 @@
 
+// ignore_for_file: unused_element
+
 import 'dart:convert';
 
 import 'package:shelf/shelf.dart';
@@ -36,6 +38,39 @@ class LegacyItemApi {
     );
   }
 
+  // التحقق من باركود EAN-8 واستخراج ITEM_CODE منه.
+  String? _itemCodeFromEan8(String barcode) {
+    final normalized = barcode.trim();
+
+    // لازم الباركود يكون 8 أرقام ويبدأ بـ 000.
+    if (!RegExp(r'^\d{8}$').hasMatch(normalized) ||
+        !normalized.startsWith('000')) {
+      return null;
+    }
+
+    // أول 7 أرقام هي بيانات الباركود، والرقم الأخير Check Digit.
+    final digits = normalized.substring(0, 7);
+
+    var sum = 0;
+
+    // حساب EAN-8 Checksum باستخدام الأوزان 3 و1 بالتبادل.
+    for (var i = 0; i < digits.length; i++) {
+      final digit = int.parse(digits[i]);
+      sum += digit * (i.isEven ? 3 : 1);
+    }
+
+    final expectedCheckDigit = (10 - sum % 10) % 10;
+    final actualCheckDigit = int.parse(normalized[7]);
+
+    if (expectedCheckDigit != actualCheckDigit) {
+      return null;
+    }
+
+    // استخراج ITEM_CODE من الخانات الرابعة إلى السابعة.
+    return normalized.substring(3, 7);
+  }
+
+
   Router get router {
     final router = Router();
 
@@ -63,6 +98,47 @@ class LegacyItemApi {
         });
       }
     });
+
+    // البحث عن الصنف باستخدام باركود EAN-8.
+    router.get('/api/items/search/barcode/<barcode>', (
+      Request request,
+      String barcode,
+    ) async {
+      try {
+        // التحقق من الباركود واستخراج ITEM_CODE.
+        final itemCode = _itemCodeFromEan8(barcode);
+
+        if (itemCode == null) {
+          return _jsonResponse(400, {
+            'success': false,
+            'message': 'Invalid barcode',
+          });
+        }
+
+        // استخدام Repository الموجود بالفعل لجلب بيانات الصنف.
+        final item = await itemRepository.findByItemCode(itemCode);
+
+        if (item == null) {
+          return _jsonResponse(404, {
+            'success': false,
+            'message': 'Item not found',
+          });
+        }
+
+        return _jsonResponse(200, {
+          'success': true,
+          'data': item.toJson(),
+        });
+      } catch (error) {
+        print('Error searching item by barcode: $error');
+
+        return _jsonResponse(500, {
+          'success': false,
+          'message': 'Failed to search item by barcode',
+        });
+      }
+    });
+
 
     // جلب بيانات البلوك بالكامل باستخدام ITEM_CODE2.
     router.get('/api/blocks/<blockNumber>', (

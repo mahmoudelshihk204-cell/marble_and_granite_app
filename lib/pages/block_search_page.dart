@@ -1,8 +1,12 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:marble_and_granite/repositories/block_repository.dart';
 
+import '../cubit/block_search_cubit/block_search_cubit.dart';
+import '../cubit/block_search_cubit/block_search_state.dart';
 import '../models/legacy/legacy_block_model.dart';
-import '../services/legacy/legacy_api_service.dart';
+
 
 class BlockSearchPage extends StatefulWidget {
   const BlockSearchPage({super.key});
@@ -12,60 +16,27 @@ class BlockSearchPage extends StatefulWidget {
 }
 
 class _BlockSearchPageState extends State<BlockSearchPage> {
-  final LegacyApiService api = LegacyApiService();
+  // إنشاء Cubit واحد لإدارة البحث طوال فترة وجود الشاشة
+  late final BlockSearchCubit cubit;
 
-  // Controller لحقل البحث عن رقم البلوك
+  // Controller لقراءة رقم البلوك من المستخدم
   final TextEditingController blockController = TextEditingController();
 
-  LegacyBlockModel? block;
+ @override
+void initState() {
+  super.initState();
 
-  bool isLoading = false;
-  String? errorMessage;
+  // الحصول على Repository الذي تم إنشاؤه في main.dart
+  final blockRepository = context.read<BlockRepository>();
 
-  // البحث عن البلوك باستخدام رقمه
-  Future<void> searchBlock() async {
-    final blockNumber = blockController.text.trim();
-
-    if (blockNumber.isEmpty) {
-      setState(() {
-        errorMessage = 'Please enter a block number';
-        block = null;
-      });
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-      block = null;
-    });
-
-    try {
-      final result = await api.getBlockByNumber(blockNumber);
-
-      if (!mounted) return;
-
-      setState(() {
-        block = result;
-        isLoading = false;
-
-        if (result == null) {
-          errorMessage = 'Block not found';
-        }
-      });
-    } catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        errorMessage = error.toString();
-        isLoading = false;
-      });
-    }
-  }
+  // إنشاء Cubit باستخدام Repository المركزي
+  cubit = BlockSearchCubit(blockRepository);
+}
 
   @override
   void dispose() {
     blockController.dispose();
+    cubit.close();
     super.dispose();
   }
 
@@ -73,121 +44,149 @@ class _BlockSearchPageState extends State<BlockSearchPage> {
   Widget build(BuildContext context) {
     const goldColor = Color(0xffC5A46D);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Block Search'),
-        backgroundColor: Colors.black,
-        foregroundColor: goldColor,
-      ),
+    return BlocProvider.value(
+      value: cubit,
 
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // حالة الاتصال بالسيرفر
-          const Card(
-            child: ListTile(
-              leading: Icon(
-                Icons.check_circle,
-                color: Colors.green,
-              ),
-              title: Text('API Connection Successful'),
-              subtitle: Text('Connected to Dart Server'),
-            ),
-          ),
+      child: BlocBuilder<BlockSearchCubit, BlockSearchState>(
+        builder: (context, state) {
+          // تحديد حالة الشاشة بناءً على الحالة الصادرة من Cubit
+          final isLoading = state is BlockSearchLoading;
 
-          const SizedBox(height: 16),
+          final errorMessage = state is BlockSearchError
+              ? state.message
+              : null;
 
-          // حقل البحث عن رقم البلوك
-          const Text(
-            'Search Block',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          final block = state is BlockSearchSuccess
+              ? state.block
+              : null;
 
-          const SizedBox(height: 10),
-
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: blockController,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.search,
-                  onSubmitted: (_) => searchBlock(),
-                  decoration: const InputDecoration(
-                    labelText: 'Block Number',
-                    hintText: 'Enter block number',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 10),
-
-              SizedBox(
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : searchBlock,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: goldColor,
-                    foregroundColor: Colors.black,
-                  ),
-                  child: const Text('Search'),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          // مؤشر التحميل
-          if (isLoading)
-            const Padding(
-              padding: EdgeInsets.all(30),
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: goldColor,
-                ),
-              ),
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Block Search'),
+              backgroundColor: Colors.black,
+              foregroundColor: goldColor,
             ),
 
-          // رسالة الخطأ أو عدم وجود البلوك
-          if (!isLoading && errorMessage != null)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: Colors.orange,
-                      size: 28,
+            body: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // حالة الاتصال بالسيرفر
+                const Card(
+                  child: ListTile(
+                    leading: Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
                     ),
-                    const SizedBox(width: 12),
+                    title: Text('API Connection Successful'),
+                    subtitle: Text('Connected to Dart Server'),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                const Text(
+                  'Search Block',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                Row(
+                  children: [
                     Expanded(
-                      child: Text(errorMessage!),
+                      child: TextField(
+                        controller: blockController,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: (_) {
+                          context.read<BlockSearchCubit>().searchBlock(
+                            blockController.text,
+                          );
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Block Number',
+                          hintText: 'Enter block number',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 10),
+
+                    SizedBox(
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                                context
+                                    .read<BlockSearchCubit>()
+                                    .searchBlock(blockController.text);
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: goldColor,
+                          foregroundColor: Colors.black,
+                        ),
+                        child: const Text('Search'),
+                      ),
                     ),
                   ],
                 ),
-              ),
+
+                const SizedBox(height: 20),
+
+                // مؤشر التحميل
+                if (isLoading)
+                  const Padding(
+                    padding: EdgeInsets.all(30),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: goldColor,
+                      ),
+                    ),
+                  ),
+
+                // رسالة الخطأ
+                if (!isLoading && errorMessage != null)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            color: Colors.orange,
+                            size: 28,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(errorMessage),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // عرض نتائج البحث
+                if (!isLoading && block != null) ...[
+                  _buildSummary(block, goldColor),
+
+                  const SizedBox(height: 20),
+
+                  _buildWarehouseTotals(block, goldColor),
+
+                  const SizedBox(height: 20),
+
+                  _buildSlabs(block, goldColor),
+                ],
+              ],
             ),
-
-          // نتائج البحث
-          if (!isLoading && block != null) ...[
-            _buildSummary(block!, goldColor),
-
-            const SizedBox(height: 20),
-
-            _buildWarehouseTotals(block!, goldColor),
-
-            const SizedBox(height: 20),
-
-            _buildSlabs(block!, goldColor),
-          ],
-        ],
+          );
+        },
       ),
     );
   }

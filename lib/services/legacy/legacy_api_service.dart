@@ -73,6 +73,52 @@ class LegacyApiService {
   }
 
   // ==========================================
+  // البحث عن صنف باستخدام Barcode EAN-8
+  // ==========================================
+  Future<LegacyItemModel?> searchByBarcode(String barcode) async {
+    // الاحتفاظ بالباركود كـ String علشان الأصفار في البداية متضيعش.
+    final normalizedBarcode = barcode.trim();
+
+    if (normalizedBarcode.isEmpty) {
+      return null;
+    }
+
+    final endpoint =
+        '/api/items/search/barcode/'
+        '${Uri.encodeComponent(normalizedBarcode)}';
+
+    final uri = Uri.parse('$baseUrl$endpoint');
+
+    final response = await http.get(uri).timeout(
+      const Duration(seconds: 15),
+    );
+
+    // الصنف غير موجود.
+    if (response.statusCode == 404) {
+      return null;
+    }
+
+    final decoded = jsonDecode(response.body);
+
+    if (decoded is! Map) {
+      throw Exception('Invalid server response');
+    }
+
+    final data = Map<String, dynamic>.from(decoded);
+
+    // التعامل مع الباركود غير الصحيح وأخطاء السيرفر.
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw Exception(data['message'] ?? 'Failed to search by barcode');
+    }
+
+    // تحويل بيانات JSON إلى موديل الصنف.
+    return LegacyItemModel.fromJson(
+      Map<String, dynamic>.from(data['data']),
+    );
+  }
+
+
+  // ==========================================
   // 2. البحث باستخدام الكود البديل
   // ITEM_CODE2
   // ==========================================
