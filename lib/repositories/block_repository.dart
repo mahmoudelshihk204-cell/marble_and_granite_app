@@ -1,4 +1,3 @@
-
 import 'package:marble_and_granite/models/legacy/legacy_item_model.dart';
 
 import '../models/legacy/legacy_block_model.dart';
@@ -11,9 +10,7 @@ class BlockRepository {
   BlockRepository(this.apiService);
 
   // البحث عن بلوك باستخدام رقمه.
-  Future<LegacyBlockModel?> getBlockByNumber(
-    String blockNumber,
-  ) async {
+  Future<LegacyBlockModel?> getBlockByNumber(String blockNumber) async {
     return await apiService.getBlockByNumber(blockNumber);
   }
 
@@ -28,9 +25,12 @@ class BlockRepository {
   }
 
   // جلب أرصدة الصنف في جميع المستودعات.
-  Future<List<LegacyBalanceModel>> getItemBalances(
-    String itemCode,
-  ) async {
+  Future<List<LegacyBalanceModel>> getItemBalances(String itemCode) async {
     return await apiService.getBalances(itemCode);
+  }
+
+  // جلب إجمالي رصيد الخامة المرتبطة بالصنف من Oracle.
+  Future<double> getRawMaterialBalance(String itemCode) async {
+    return await apiService.getRawMaterialBalance(itemCode);
   }
 }

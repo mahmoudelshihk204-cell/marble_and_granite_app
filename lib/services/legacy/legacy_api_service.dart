@@ -89,9 +89,7 @@ class LegacyApiService {
 
     final uri = Uri.parse('$baseUrl$endpoint');
 
-    final response = await http.get(uri).timeout(
-      const Duration(seconds: 15),
-    );
+    final response = await http.get(uri).timeout(const Duration(seconds: 15));
 
     // الصنف غير موجود.
     if (response.statusCode == 404) {
@@ -112,11 +110,8 @@ class LegacyApiService {
     }
 
     // تحويل بيانات JSON إلى موديل الصنف.
-    return LegacyItemModel.fromJson(
-      Map<String, dynamic>.from(data['data']),
-    );
+    return LegacyItemModel.fromJson(Map<String, dynamic>.from(data['data']));
   }
-
 
   // ==========================================
   // 2. البحث باستخدام الكود البديل
@@ -151,6 +146,23 @@ class LegacyApiService {
     return balances.map((balance) {
       return LegacyBalanceModel.fromJson(Map<String, dynamic>.from(balance));
     }).toList();
+  }
+
+  // جلب إجمالي رصيد الخامة المرتبطة بالصنف من Oracle.
+  Future<double> getRawMaterialBalance(String itemCode) async {
+    final endpoint =
+        '/api/items/${Uri.encodeComponent(itemCode)}/raw-material-balance';
+
+    final response = await _getJson(endpoint);
+
+    // قراءة إجمالي رصيد الخامة من استجابة السيرفر.
+    final balance = response['rawMaterialBalance'];
+
+    if (balance is num) {
+      return balance.toDouble();
+    }
+
+    throw Exception('Invalid raw material balance');
   }
 
   // ==========================================

@@ -1,0 +1,195 @@
+diff --git a/lib/cubit/item_code_search_cubit/item_code_search_cubit.dart b/lib/cubit/item_code_search_cubit/item_code_search_cubit.dart
+index 96e9a55..af9e8f1 100644
+--- a/lib/cubit/item_code_search_cubit/item_code_search_cubit.dart
++++ b/lib/cubit/item_code_search_cubit/item_code_search_cubit.dart
+@@ -1,6 +1,8 @@
+ 
+ import 'package:flutter_bloc/flutter_bloc.dart';
+ 
++import '../../models/legacy/legacy_balance_model.dart';
++import '../../models/legacy/legacy_item_model.dart';
+ import '../../repositories/block_repository.dart';
+ import 'item_code_search_state.dart';
+ 
+@@ -10,6 +12,19 @@ class ItemCodeSearchCubit extends Cubit<ItemCodeSearchState> {
+   ItemCodeSearchCubit(this.blockRepository)
+       : super(const ItemCodeSearchInitial());
+ 
++  // جلب رصيد الصنف ثم إرسال النتيجة. فشل الرصيد لا يخفي بيانات الصنف.
++  Future<void> _emitWithBalances(LegacyItemModel item) async {
++    List<LegacyBalanceModel>? balances;
++
++    try {
++      balances = await blockRepository.getItemBalances(item.itemCode);
++    } catch (_) {
++      balances = null;
++    }
++
++    emit(ItemCodeSearchSuccess(item, balances: balances));
++  }
++
+   // البحث اليدوي باستخدام Item Code.
+   Future<void> searchItemCode(String itemCode) async {
+     final normalizedCode = itemCode.trim();
+@@ -29,7 +44,7 @@ class ItemCodeSearchCubit extends Cubit<ItemCodeSearchState> {
+         return;
+       }
+ 
+-      emit(ItemCodeSearchSuccess(item));
++      await _emitWithBalances(item);
+     } catch (error) {
+       emit(ItemCodeSearchError('Failed to search Item Code: $error'));
+     }
+@@ -56,7 +71,7 @@ class ItemCodeSearchCubit extends Cubit<ItemCodeSearchState> {
+         return;
+       }
+ 
+-      emit(ItemCodeSearchSuccess(item));
++      await _emitWithBalances(item);
+     } catch (error) {
+       emit(ItemCodeSearchError('Failed to search Barcode: $error'));
+     }
+diff --git a/lib/cubit/item_code_search_cubit/item_code_search_state.dart b/lib/cubit/item_code_search_cubit/item_code_search_state.dart
+index cd55583..0efc360 100644
+--- a/lib/cubit/item_code_search_cubit/item_code_search_state.dart
++++ b/lib/cubit/item_code_search_cubit/item_code_search_state.dart
+@@ -1,6 +1,7 @@
+ 
+ import 'package:equatable/equatable.dart';
+ 
++import '../../models/legacy/legacy_balance_model.dart';
+ import '../../models/legacy/legacy_item_model.dart';
+ 
+ // الحالات المختلفة لعملية البحث باستخدام Item Code.
+@@ -25,10 +26,13 @@ class ItemCodeSearchLoading extends ItemCodeSearchState {
+ class ItemCodeSearchSuccess extends ItemCodeSearchState {
+   final LegacyItemModel item;
+ 
+-  const ItemCodeSearchSuccess(this.item);
++  // رصيد الصنف نفسه في المستودعات. null = فشل تحميل الرصيد.
++  final List<LegacyBalanceModel>? balances;
++
++  const ItemCodeSearchSuccess(this.item, {this.balances});
+ 
+   @override
+-  List<Object?> get props => [item];
++  List<Object?> get props => [item, balances];
+ }
+ 
+ // عند حدوث خطأ أو عدم العثور على الصنف.
+diff --git a/lib/pages/item_code_search_page.dart b/lib/pages/item_code_search_page.dart
+index 7b41ab0..6f0762b 100644
+--- a/lib/pages/item_code_search_page.dart
++++ b/lib/pages/item_code_search_page.dart
+@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
+ 
+ import '../cubit/item_code_search_cubit/item_code_search_cubit.dart';
+ import '../cubit/item_code_search_cubit/item_code_search_state.dart';
++import '../models/legacy/legacy_balance_model.dart';
+ import '../models/legacy/legacy_item_model.dart';
+ import '../repositories/block_repository.dart';
+ 
+@@ -72,6 +73,10 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
+               ? state.item
+               : null;
+ 
++          final balances = state is ItemCodeSearchSuccess
++              ? state.balances
++              : null;
++
+           return Scaffold(
+             appBar: AppBar(
+               title: const Text('Search Item Code'),
+@@ -160,8 +165,11 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
+                     ),
+                   ),
+ 
+-                if (!isLoading && item != null)
++                if (!isLoading && item != null) ...[
+                   _buildItemDetails(item),
++                  const SizedBox(height: 20),
++                  _buildItemStock(balances),
++                ],
+               ],
+             ),
+           );
+@@ -226,6 +234,57 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
+     );
+   }
+ 
++  // رصيد الصنف نفسه (مش رصيد البلوك) في كل مستودع.
++  Widget _buildItemStock(List<LegacyBalanceModel>? balances) {
++    if (balances == null) {
++      return const Text('Could not load item stock');
++    }
++
++    final total = balances.fold<double>(
++      0,
++      (sum, balance) => sum + (balance.balance ?? 0),
++    );
++
++    return Column(
++      crossAxisAlignment: CrossAxisAlignment.start,
++      children: [
++        const Text(
++          'Item Stock',
++          style: TextStyle(
++            fontSize: 20,
++            fontWeight: FontWeight.bold,
++          ),
++        ),
++
++        const SizedBox(height: 10),
++
++        Card(
++          child: Padding(
++            padding: const EdgeInsets.all(16),
++            child: Column(
++              children: [
++                _infoRow('Total Item Stock', '$total'),
++
++                if (balances.isEmpty) ...[
++                  const Divider(),
++                  _infoRow('Warehouses', 'No stock records'),
++                ],
++
++                for (final balance in balances) ...[
++                  const Divider(),
++                  _infoRow(
++                    balance.branchName ?? balance.branchCode,
++                    '${balance.balance ?? 0}',
++                  ),
++                ],
++              ],
++            ),
++          ),
++        ),
++      ],
++    );
++  }
++
+   // Widget مشترك لعرض اسم الخاصية وقيمتها.
+   Widget _infoRow(String title, String value) {
+     return Padding(
+diff --git a/lib/repositories/block_repository.dart b/lib/repositories/block_repository.dart
+index be3dcfa..db21323 100644
+--- a/lib/repositories/block_repository.dart
++++ b/lib/repositories/block_repository.dart
+@@ -1,4 +1,5 @@
+ import 'package:marble_and_granite/models/legacy/legacy_item_model.dart';
++import 'package:marble_and_granite/models/legacy/legacy_balance_model.dart';
+ 
+ import '../models/legacy/legacy_block_model.dart';
+ import '../services/legacy/legacy_api_service.dart';
+@@ -22,6 +23,11 @@ class BlockRepository {
+     return await apiService.searchByBarcode(barcode);
+   }
+ 
++  // جلب رصيد الصنف نفسه في كل المستودعات.
++  Future<List<LegacyBalanceModel>> getItemBalances(String itemCode) async {
++    return await apiService.getBalances(itemCode);
++  }
++
+   // البحث عن الصنف باستخدام Item Code.
+   Future<LegacyItemModel?> getItemByCode(String itemCode) async {
+     return await apiService.getItemByCode(itemCode);

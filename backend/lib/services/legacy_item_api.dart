@@ -1,4 +1,3 @@
-
 // ignore_for_file: unused_element
 
 import 'dart:convert';
@@ -25,16 +24,11 @@ class LegacyItemApi {
   });
 
   // توحيد شكل استجابة JSON ودعم اللغة العربية باستخدام UTF-8.
-  Response _jsonResponse(
-    int statusCode,
-    Map<String, dynamic> data,
-  ) {
+  Response _jsonResponse(int statusCode, Map<String, dynamic> data) {
     return Response(
       statusCode,
       body: jsonEncode(data),
-      headers: {
-        'content-type': 'application/json; charset=utf-8',
-      },
+      headers: {'content-type': 'application/json; charset=utf-8'},
     );
   }
 
@@ -70,7 +64,6 @@ class LegacyItemApi {
     return normalized.substring(3, 7);
   }
 
-
   Router get router {
     final router = Router();
 
@@ -80,9 +73,7 @@ class LegacyItemApi {
       String alternateCode,
     ) async {
       try {
-        final items = await itemRepository.findByAlternateCode(
-          alternateCode,
-        );
+        final items = await itemRepository.findByAlternateCode(alternateCode);
 
         return _jsonResponse(200, {
           'success': true,
@@ -125,10 +116,7 @@ class LegacyItemApi {
           });
         }
 
-        return _jsonResponse(200, {
-          'success': true,
-          'data': item.toJson(),
-        });
+        return _jsonResponse(200, {'success': true, 'data': item.toJson()});
       } catch (error) {
         print('Error searching item by barcode: $error');
 
@@ -139,16 +127,13 @@ class LegacyItemApi {
       }
     });
 
-
     // جلب بيانات البلوك بالكامل باستخدام ITEM_CODE2.
     router.get('/api/blocks/<blockNumber>', (
       Request request,
       String blockNumber,
     ) async {
       try {
-        final block = await blockRepository.findByBlockNumber(
-          blockNumber,
-        );
+        final block = await blockRepository.findByBlockNumber(blockNumber);
 
         // لو البلوك مش موجود نرجع 404.
         if (block == null) {
@@ -158,10 +143,7 @@ class LegacyItemApi {
           });
         }
 
-        return _jsonResponse(200, {
-          'success': true,
-          'data': block,
-        });
+        return _jsonResponse(200, {'success': true, 'data': block});
       } catch (error) {
         print('Error fetching block: $error');
 
@@ -187,10 +169,7 @@ class LegacyItemApi {
           });
         }
 
-        return _jsonResponse(200, {
-          'success': true,
-          'data': item.toJson(),
-        });
+        return _jsonResponse(200, {'success': true, 'data': item.toJson()});
       } catch (error) {
         print('Error fetching legacy item: $error');
 
@@ -201,14 +180,46 @@ class LegacyItemApi {
       }
     });
 
+    // جلب إجمالي رصيد الخامة المرتبطة بالصنف.
+    router.get('/api/items/<itemCode>/raw-material-balance', (
+      Request request,
+      String itemCode,
+    ) async {
+      try {
+        // حساب إجمالي رصيد الخامة من خلال Repository.
+        final balance = await balanceRepository
+            .findRawMaterialBalanceByItemCode(itemCode);
+
+        // لو الصنف غير موجود في قاعدة البيانات.
+        if (balance == null) {
+          return _jsonResponse(404, {
+            'success': false,
+            'message': 'Item not found',
+          });
+        }
+
+        return _jsonResponse(200, {
+          'success': true,
+          'itemCode': itemCode,
+          'rawMaterialBalance': balance,
+        });
+      } catch (error) {
+        print('Error fetching raw material balance: $error');
+
+        return _jsonResponse(500, {
+          'success': false,
+          'message': 'Failed to fetch raw material balance',
+        });
+      }
+    });
+
     // جلب أرصدة الصنف في جميع المستودعات.
     router.get('/api/items/<itemCode>/balances', (
       Request request,
       String itemCode,
     ) async {
       try {
-        final balances =
-            await balanceRepository.findByItemCode(itemCode);
+        final balances = await balanceRepository.findByItemCode(itemCode);
 
         return _jsonResponse(200, {
           'success': true,

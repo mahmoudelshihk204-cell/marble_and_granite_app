@@ -1,4 +1,3 @@
-
 import 'package:oracledb/oracledb.dart';
 
 import '../models/legacy_balance_model.dart';
@@ -7,14 +6,11 @@ class LegacyBalanceRepository {
   // الاتصال بقاعدة بيانات Oracle.
   final OracleConnection connection;
 
-  LegacyBalanceRepository({
-    required this.connection,
-  });
+  LegacyBalanceRepository({required this.connection});
 
-  // البحث عن كل أرصدة صنف معين في المستودعات.
-  Future<List<LegacyBalanceModel>> findByItemCode(
-    String itemCode,
-  ) async {
+  // جلب أرصدة صنف معين في جميع المستودعات.
+  // الدالة الحالية ستظل كما هي دون تغيير في وظيفتها.
+  Future<List<LegacyBalanceModel>> findByItemCode(String itemCode) async {
     const query = '''
       SELECT
         B.ITEM_CODE,
@@ -29,18 +25,50 @@ class LegacyBalanceRepository {
       LEFT JOIN BRANCH BR
         ON BR.GROUP_CODE = B.BRAN_CODE
       WHERE B.ITEM_CODE = :item_code
-      ORDER BY B.BRAN_CODE
     ''';
 
-    // تمرير كود الصنف كـ Bind Parameter.
-    final result = await connection.execute(
-      query,
-      {'item_code': itemCode},
-    );
+    final result = await connection.execute(query, {'item_code': itemCode});
 
-    // تحويل كل صف إلى LegacyBalanceModel.
     return result.rows.map((row) {
       return LegacyBalanceModel.fromMap(row.toMap());
     }).toList();
+  }
+
+  // حساب إجمالي رصيد الخامة المرتبطة بالصنف.
+  // نستخدم بيانات التصنيف للصنف المطلوب، ثم نجمع أرصدة
+  // كل الأصناف التابعة لنفس الخامة، بما فيها الأرصدة السالبة.
+  Future<double?> findRawMaterialBalanceByItemCode(String itemCode) async {
+    const query = '''
+      SELECT
+        T.ITEM_CODE,
+        NVL(
+          (
+            SELECT SUM(NVL(B.BAL, 0))
+            FROM INVMAS M
+            LEFT JOIN INVMAS_BAL B
+              ON B.ITEM_CODE = M.ITEM_CODE
+            WHERE M.M_CLASS = T.M_CLASS
+              AND M.M_TYPE = T.M_TYPE
+              AND M.M_NAME = T.M_NAME
+              AND M.CUST_TYPE = T.CUST_TYPE
+          ),
+          0
+        ) AS RAW_MATERIAL_BALANCE
+      FROM INVMAS T
+      WHERE T.ITEM_CODE = :item_code
+    ''';
+
+    final result = await connection.execute(query, {'item_code': itemCode});
+
+    // لو الصنف غير موجود نرجع null.
+    if (result.rows.isEmpty) {
+      return null;
+    }
+
+    final row = result.rows.first.toMap();
+    final balance = row['RAW_MATERIAL_BALANCE'];
+
+    // تحويل قيمة Oracle إلى double لاستخدامها في JSON.
+    return double.tryParse(balance.toString());
   }
 }

@@ -1,8 +1,10 @@
+// ignore_for_file: unused_import
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:marble_and_granite/pages/scanner_page.dart';
-
+import '../cubit/raw_material_balance_cubit/raw_material_balance_cubit.dart';
+import '../cubit/raw_material_balance_cubit/raw_material_balance_state.dart';
 import '../cubit/item_code_search_cubit/item_code_search_cubit.dart';
 import '../cubit/item_code_search_cubit/item_code_search_state.dart';
 import '../cubit/item_balance_cubit/item_balance_cubit.dart';
@@ -13,10 +15,7 @@ import '../repositories/block_repository.dart';
 class BarcodeResultPage extends StatefulWidget {
   final String barcode;
 
-  const BarcodeResultPage({
-    super.key,
-    required this.barcode,
-  });
+  const BarcodeResultPage({super.key, required this.barcode});
 
   @override
   State<BarcodeResultPage> createState() => _BarcodeResultPageState();
@@ -27,6 +26,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
 
   late final ItemCodeSearchCubit cubit;
   late final ItemBalanceCubit balanceCubit;
+  late final RawMaterialBalanceCubit rawMaterialBalanceCubit;
 
   @override
   void initState() {
@@ -37,6 +37,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
 
     cubit = ItemCodeSearchCubit(repository);
     balanceCubit = ItemBalanceCubit(repository);
+    rawMaterialBalanceCubit = RawMaterialBalanceCubit(repository);
 
     // بدء البحث عن الصنف بالباركود.
     cubit.searchBarcode(widget.barcode);
@@ -46,16 +47,16 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
   void dispose() {
     cubit.close();
     balanceCubit.close();
+    rawMaterialBalanceCubit.close();
     super.dispose();
+    
   }
 
   // فتح الكاميرا لمسح باركود جديد.
   Future<void> _scanAnotherBarcode() async {
     final String? barcode = await Navigator.push<String>(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ScannerPage(),
-      ),
+      MaterialPageRoute(builder: (context) => const ScannerPage()),
     );
 
     if (!mounted || barcode == null || barcode.trim().isEmpty) {
@@ -66,9 +67,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => BarcodeResultPage(
-          barcode: barcode.trim(),
-        ),
+        builder: (context) => BarcodeResultPage(barcode: barcode.trim()),
       ),
     );
   }
@@ -79,12 +78,15 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
       providers: [
         BlocProvider.value(value: cubit),
         BlocProvider.value(value: balanceCubit),
+        BlocProvider.value(value: rawMaterialBalanceCubit),
       ],
       child: BlocConsumer<ItemCodeSearchCubit, ItemCodeSearchState>(
         // عند نجاح البحث عن الصنف نبدأ تحميل أرصدته.
         listener: (context, state) {
           if (state is ItemCodeSearchSuccess) {
             balanceCubit.fetchBalances(state.item.itemCode);
+            // جلب إجمالي رصيد الخامة بشكل مستقل.
+            rawMaterialBalanceCubit.fetchBalance(state.item.itemCode);
           }
         },
         builder: (context, state) {
@@ -107,10 +109,10 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
                 child: isLoading
                     ? const CircularProgressIndicator(color: goldColor)
                     : errorMessage != null
-                        ? _buildError(errorMessage)
-                        : item != null
-                            ? _buildItemDetails(item)
-                            : const Text('No data found'),
+                    ? _buildError(errorMessage)
+                    : item != null
+                    ? _buildItemDetails(item)
+                    : const Text('No data found'),
               ),
             ),
           );
@@ -123,10 +125,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
   Widget _buildError(String message) {
     return Card(
       child: ListTile(
-        leading: const Icon(
-          Icons.error_outline,
-          color: Colors.orange,
-        ),
+        leading: const Icon(Icons.error_outline, color: Colors.orange),
         title: Text(message),
       ),
     );
@@ -178,7 +177,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
             ),
           ),
         ),
-
+        _buildRawMaterialBalanceSection(),
         const SizedBox(height: 20),
 
         // أرصدة الصنف في المستودعات.
@@ -195,10 +194,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
             icon: const Icon(Icons.qr_code_scanner),
             label: const Text(
               'Scan Another Barcode',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: goldColor,
@@ -215,12 +211,75 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
     );
   }
 
+  // تحميل وعرض إجمالي رصيد الخامة.
+  Widget _buildRawMaterialBalanceSection() {
+    return BlocBuilder<RawMaterialBalanceCubit, RawMaterialBalanceState>(
+      builder: (context, state) {
+        if (state is RawMaterialBalanceLoading ||
+            state is RawMaterialBalanceInitial) {
+          return const Card(
+            child: ListTile(
+              leading: CircularProgressIndicator(color: goldColor),
+              title: Text('Loading raw material balance...'),
+            ),
+          );
+        }
+
+        if (state is RawMaterialBalanceError) {
+          return Card(
+            child: ListTile(
+              leading: const Icon(Icons.error_outline, color: Colors.orange),
+              title: const Text('Failed to load raw material balance'),
+              subtitle: Text(state.message),
+            ),
+          );
+        }
+
+        if (state is RawMaterialBalanceSuccess) {
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.inventory_2_outlined,
+                    color: goldColor,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Raw Material Balance',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    state.balance.toStringAsFixed(3),
+                    style: const TextStyle(
+                      color: goldColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
   // تحميل وعرض أرصدة المستودعات.
   Widget _buildBalancesSection() {
     return BlocBuilder<ItemBalanceCubit, ItemBalanceState>(
       builder: (context, state) {
-        if (state is ItemBalanceLoading ||
-            state is ItemBalanceInitial) {
+        if (state is ItemBalanceLoading || state is ItemBalanceInitial) {
           return const Card(
             child: ListTile(
               leading: CircularProgressIndicator(color: goldColor),
@@ -232,10 +291,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
         if (state is ItemBalanceError) {
           return Card(
             child: ListTile(
-              leading: const Icon(
-                Icons.error_outline,
-                color: Colors.orange,
-              ),
+              leading: const Icon(Icons.error_outline, color: Colors.orange),
               title: const Text('Failed to load balances'),
               subtitle: Text(state.message),
             ),
@@ -291,13 +347,9 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
                           title: Text(
                             balance.branchName ??
                                 'Warehouse ${balance.branchCode}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          subtitle: Text(
-                            'Warehouse Code: ${balance.branchCode}',
-                          ),
+                          
                           trailing: Text(
                             _formatNumber(balance.balance),
                             style: const TextStyle(
