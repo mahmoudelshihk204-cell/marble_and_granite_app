@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:marble_and_granite/Constant/constants.dart';
 import 'package:marble_and_granite/Widgets/custom_container_item.dart';
-import 'package:marble_and_granite/pages/barcode_search_page.dart';
+import 'package:marble_and_granite/pages/item_code_search_page.dart';
 import 'package:marble_and_granite/pages/scanner_page.dart';
 import 'package:marble_and_granite/pages/products_page.dart';
 import 'package:marble_and_granite/services/product_api_service.dart';
 import 'package:marble_and_granite/pages/product_details_page.dart';
 import 'package:marble_and_granite/pages/block_search_page.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -255,7 +256,7 @@ CustomContainerItem(
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const BarcodeSearchPage(),
+        builder: (context) => const ItemCodeSearchPage(),
       ),
     );
   },

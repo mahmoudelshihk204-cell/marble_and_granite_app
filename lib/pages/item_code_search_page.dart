@@ -2,25 +2,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../cubit/barcode_search_cubit/barcode_search_cubit.dart';
-import '../cubit/barcode_search_cubit/barcode_search_state.dart';
+import '../cubit/item_code_search_cubit/item_code_search_cubit.dart';
+import '../cubit/item_code_search_cubit/item_code_search_state.dart';
 import '../models/legacy/legacy_item_model.dart';
 import '../repositories/block_repository.dart';
 
-class BarcodeSearchPage extends StatefulWidget {
-  const BarcodeSearchPage({super.key});
+class ItemCodeSearchPage extends StatefulWidget {
+  const ItemCodeSearchPage({super.key});
 
   @override
-  State<BarcodeSearchPage> createState() => _BarcodeSearchPageState();
+  State<ItemCodeSearchPage> createState() => _ItemCodeSearchPageState();
 }
 
-class _BarcodeSearchPageState extends State<BarcodeSearchPage> {
+class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
   static const goldColor = Color(0xffC5A46D);
 
-  late final BarcodeSearchCubit cubit;
+  late final ItemCodeSearchCubit cubit;
 
-  // Controller لاستقبال الباركود مع الحفاظ على الأصفار في البداية.
-  final TextEditingController barcodeController = TextEditingController();
+  // Controller لاستقبال رقم الصنف.
+  final TextEditingController itemCodeController = TextEditingController();
 
   @override
   void initState() {
@@ -29,39 +29,40 @@ class _BarcodeSearchPageState extends State<BarcodeSearchPage> {
     // استخدام Repository المسجل بالفعل في main.dart.
     final repository = context.read<BlockRepository>();
 
-    cubit = BarcodeSearchCubit(repository);
+    cubit = ItemCodeSearchCubit(repository);
   }
 
   @override
   void dispose() {
-    barcodeController.dispose();
+    itemCodeController.dispose();
     cubit.close();
     super.dispose();
   }
 
-  void _searchBarcode() {
-    cubit.searchBarcode(barcodeController.text);
+  // تنفيذ البحث باستخدام Item Code.
+  void _searchItemCode() {
+    cubit.searchItemCode(itemCodeController.text);
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: cubit,
-      child: BlocBuilder<BarcodeSearchCubit, BarcodeSearchState>(
+      child: BlocBuilder<ItemCodeSearchCubit, ItemCodeSearchState>(
         builder: (context, state) {
-          final isLoading = state is BarcodeSearchLoading;
+          final isLoading = state is ItemCodeSearchLoading;
 
-          final errorMessage = state is BarcodeSearchError
+          final errorMessage = state is ItemCodeSearchError
               ? state.message
               : null;
 
-          final item = state is BarcodeSearchSuccess
+          final item = state is ItemCodeSearchSuccess
               ? state.item
               : null;
 
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Barcode Search'),
+              title: const Text('Search Item Code'),
               backgroundColor: Colors.black,
               foregroundColor: goldColor,
             ),
@@ -71,10 +72,10 @@ class _BarcodeSearchPageState extends State<BarcodeSearchPage> {
                 const Card(
                   child: ListTile(
                     leading: Icon(
-                      Icons.qr_code_scanner,
+                      Icons.inventory_2,
                       color: goldColor,
                     ),
-                    title: Text('Stock Barcode Search'),
+                    title: Text('Item Code Search'),
                     subtitle: Text('Search Oracle inventory items'),
                   ),
                 ),
@@ -82,7 +83,7 @@ class _BarcodeSearchPageState extends State<BarcodeSearchPage> {
                 const SizedBox(height: 20),
 
                 const Text(
-                  'Enter Barcode',
+                  'Enter Item Code',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -95,17 +96,15 @@ class _BarcodeSearchPageState extends State<BarcodeSearchPage> {
                   children: [
                     Expanded(
                       child: TextField(
-                        controller: barcodeController,
+                        controller: itemCodeController,
                         keyboardType: TextInputType.number,
-                        maxLength: 8,
                         textInputAction: TextInputAction.search,
-                        onSubmitted: (_) => _searchBarcode(),
+                        onSubmitted: (_) => _searchItemCode(),
                         decoration: const InputDecoration(
-                          labelText: 'EAN-8 Barcode',
-                          hintText: 'Example: 00022798',
-                          prefixIcon: Icon(Icons.qr_code),
+                          labelText: 'Item Code',
+                          hintText: 'Enter item code',
+                          prefixIcon: Icon(Icons.numbers),
                           border: OutlineInputBorder(),
-                          counterText: '',
                         ),
                       ),
                     ),
@@ -115,7 +114,7 @@ class _BarcodeSearchPageState extends State<BarcodeSearchPage> {
                     SizedBox(
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: isLoading ? null : _searchBarcode,
+                        onPressed: isLoading ? null : _searchItemCode,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: goldColor,
                           foregroundColor: Colors.black,
