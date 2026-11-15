@@ -3,9 +3,6 @@ import 'package:marble_and_granite/Constant/constants.dart';
 import 'package:marble_and_granite/Widgets/custom_container_item.dart';
 import 'package:marble_and_granite/pages/item_code_search_page.dart';
 import 'package:marble_and_granite/pages/scanner_page.dart';
-import 'package:marble_and_granite/pages/products_page.dart';
-import 'package:marble_and_granite/services/product_api_service.dart';
-import 'package:marble_and_granite/pages/product_details_page.dart';
 import 'package:marble_and_granite/pages/block_search_page.dart';
 
 
@@ -22,56 +19,18 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController barcodeController = TextEditingController();
   bool isSearching = false;
 
-  Future<void> searchProduct(String barcode) async {
-    setState(() {
-      isSearching = true;
-    });
-
-    try {
-      final product = await ProductApiService().getProductByBarcode(barcode);
-
-      if (!mounted) return;
-
-      setState(() {
-        isSearching = false;
-      });
-
-      if (product == null) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Product Not Found'),
-            content: Text('No product found for barcode: $barcode'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-        return;
-      }
-
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              ProductDetailsPage(product: product, barcode: barcode),
-        ),
-      );
-    } catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        isSearching = false;
-      });
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $error')));
-    }
-  }
+  // البحث عن الصنف في Oracle باستخدام Barcode.
+  // فتح صفحة البحث وإرسال Barcode لتبدأ البحث تلقائياً.
+Future<void> searchStockByBarcode(String barcode) async {
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ItemCodeSearchPage(
+        initialBarcode: barcode,
+      ),
+    ),
+  );
+}
 
   Future<void> scanBarcode() async {
     final String? barcode = await Navigator.push<String>(
@@ -83,7 +42,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    await searchProduct(barcode.trim());
+    await searchStockByBarcode(barcode.trim());
   }
 
   // فتح نافذة إدخال Barcode يدويًا.
@@ -138,7 +97,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     // البحث عن المنتج باستخدام نفس دالة البحث المستخدمة في الكاميرا.
-    await searchProduct(barcode);
+    await searchStockByBarcode(barcode);
   }
 
   // التخلص من الـController عند إزالة الصفحة نهائيًا.
@@ -219,21 +178,6 @@ class _HomePageState extends State<HomePage> {
                 ],
 
                 const SizedBox(height: 20),
-
-                CustomContainerItem(
-                  containerName: 'View Products',
-                  icon: Icons.inventory_2,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ProductsPage(),
-                      ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 20),
                 CustomContainerItem(
                   containerName: 'Search Block',
                   icon: Icons.numbers,
@@ -248,19 +192,19 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 20),
 
-// البحث عن صنف المخزون باستخدام Barcode من قاعدة بيانات Oracle.
-CustomContainerItem(
-  containerName: 'Search Stock by Barcode',
-  icon: Icons.qr_code_2,
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ItemCodeSearchPage(),
-      ),
-    );
-  },
-),
+                // البحث عن صنف المخزون باستخدام Barcode من قاعدة بيانات Oracle.
+                CustomContainerItem(
+                  containerName: 'Search Item Code',
+                  icon: Icons.qr_code_2,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ItemCodeSearchPage(),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),

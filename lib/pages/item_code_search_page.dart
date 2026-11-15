@@ -8,7 +8,13 @@ import '../models/legacy/legacy_item_model.dart';
 import '../repositories/block_repository.dart';
 
 class ItemCodeSearchPage extends StatefulWidget {
-  const ItemCodeSearchPage({super.key});
+  // استقبال Barcode اختياري من صفحة الكاميرا.
+  final String? initialBarcode;
+
+  const ItemCodeSearchPage({
+    super.key,
+    this.initialBarcode,
+  });
 
   @override
   State<ItemCodeSearchPage> createState() => _ItemCodeSearchPageState();
@@ -19,17 +25,23 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
 
   late final ItemCodeSearchCubit cubit;
 
-  // Controller لاستقبال رقم الصنف.
+  // Controller لاستقبال Item Code عند البحث اليدوي.
   final TextEditingController itemCodeController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
 
-    // استخدام Repository المسجل بالفعل في main.dart.
+    // استخدام Repository المسجل في main.dart.
     final repository = context.read<BlockRepository>();
-
     cubit = ItemCodeSearchCubit(repository);
+
+    // لو الصفحة استقبلت Barcode من الكاميرا، نبدأ البحث تلقائياً.
+    final barcode = widget.initialBarcode?.trim();
+
+    if (barcode != null && barcode.isNotEmpty) {
+      cubit.searchBarcode(barcode);
+    }
   }
 
   @override
@@ -39,7 +51,7 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
     super.dispose();
   }
 
-  // تنفيذ البحث باستخدام Item Code.
+  // البحث اليدوي باستخدام Item Code.
   void _searchItemCode() {
     cubit.searchItemCode(itemCodeController.text);
   }
@@ -75,7 +87,7 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
                       Icons.inventory_2,
                       color: goldColor,
                     ),
-                    title: Text('Item Code Search'),
+                    title: Text('Item Search'),
                     subtitle: Text('Search Oracle inventory items'),
                   ),
                 ),
@@ -214,7 +226,7 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
     );
   }
 
-  // صف موحد لعرض اسم الخاصية وقيمتها.
+  // Widget مشترك لعرض اسم الخاصية وقيمتها.
   Widget _infoRow(String title, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
