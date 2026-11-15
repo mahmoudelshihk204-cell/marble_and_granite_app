@@ -4,6 +4,7 @@ import 'package:marble_and_granite/Widgets/custom_container_item.dart';
 import 'package:marble_and_granite/pages/item_code_search_page.dart';
 import 'package:marble_and_granite/pages/scanner_page.dart';
 import 'package:marble_and_granite/pages/block_search_page.dart';
+import 'package:marble_and_granite/pages/barcode_result_page.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -21,12 +22,13 @@ class _HomePageState extends State<HomePage> {
 
   // البحث عن الصنف في Oracle باستخدام Barcode.
   // فتح صفحة البحث وإرسال Barcode لتبدأ البحث تلقائياً.
+// فتح صفحة مستقلة لعرض نتيجة البحث بالباركود.
 Future<void> searchStockByBarcode(String barcode) async {
   await Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (context) => ItemCodeSearchPage(
-        initialBarcode: barcode,
+      builder: (context) => BarcodeResultPage(
+        barcode: barcode,
       ),
     ),
   );
