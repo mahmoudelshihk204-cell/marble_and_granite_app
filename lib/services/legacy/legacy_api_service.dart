@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-
+import 'package:flutter/foundation.dart';
 import '../../models/legacy/legacy_item_model.dart';
 import '../../models/legacy/legacy_balance_model.dart';
 import '../../models/legacy/legacy_unit_model.dart';
@@ -18,27 +18,41 @@ class LegacyApiService {
   // ==========================================
   // دالة مشتركة لإرسال GET واستقبال JSON
   // ==========================================
+
   Future<Map<String, dynamic>> _getJson(String endpoint) async {
     final uri = Uri.parse('$baseUrl$endpoint');
 
-    final response = await http.get(uri).timeout(const Duration(seconds: 15));
+    try {
+      // طباعة العنوان الفعلي الذي يطلبه التطبيق.
+      debugPrint('API REQUEST URL: $uri');
 
-    final decoded = jsonDecode(response.body);
+      final response = await http.get(uri).timeout(const Duration(seconds: 15));
 
-    if (decoded is! Map) {
-      throw Exception('Invalid server response');
+      // طباعة كود الاستجابة ومحتواها لمعرفة سبب المشكلة.
+      debugPrint('API STATUS CODE: ${response.statusCode}');
+      debugPrint('API RESPONSE BODY: ${response.body}');
+
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is! Map) {
+        throw Exception('Invalid server response');
+      }
+
+      final data = Map<String, dynamic>.from(decoded);
+
+      if (response.statusCode < 200 ||
+          response.statusCode >= 300 ||
+          data['success'] != true) {
+        throw Exception(
+          'HTTP ${response.statusCode}: ${data['message'] ?? response.body}',
+        );
+      }
+
+      return data;
+    } catch (error) {
+      debugPrint('API REQUEST ERROR: $error');
+      rethrow;
     }
-
-    final data = Map<String, dynamic>.from(decoded);
-
-    // لو السيرفر رجّع خطأ، نعرض الرسالة
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        data['success'] != true) {
-      throw Exception(data['message'] ?? 'Server request failed');
-    }
-
-    return data;
   }
 
   // ==========================================

@@ -49,7 +49,6 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
     balanceCubit.close();
     rawMaterialBalanceCubit.close();
     super.dispose();
-    
   }
 
   // فتح الكاميرا لمسح باركود جديد.
@@ -82,13 +81,16 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
       ],
       child: BlocConsumer<ItemCodeSearchCubit, ItemCodeSearchState>(
         // عند نجاح البحث عن الصنف نبدأ تحميل أرصدته.
-        listener: (context, state) {
+        listener: (context, state) async {
           if (state is ItemCodeSearchSuccess) {
-            balanceCubit.fetchBalances(state.item.itemCode);
-            // جلب إجمالي رصيد الخامة بشكل مستقل.
-            rawMaterialBalanceCubit.fetchBalance(state.item.itemCode);
+            // أولاً: تحميل أرصدة المستودعات وانتظار انتهاء طلب Oracle.
+            await balanceCubit.fetchBalances(state.item.itemCode);
+
+            // ثانياً: بعد انتهاء الطلب الأول، نحمل إجمالي رصيد الخامة.
+            await rawMaterialBalanceCubit.fetchBalance(state.item.itemCode);
           }
         },
+
         builder: (context, state) {
           final isLoading = state is ItemCodeSearchLoading;
           final item = state is ItemCodeSearchSuccess ? state.item : null;
@@ -349,7 +351,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
                                 'Warehouse ${balance.branchCode}',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          
+
                           trailing: Text(
                             _formatNumber(balance.balance),
                             style: const TextStyle(

@@ -1,20 +1,19 @@
-
 import 'package:oracledb/oracledb.dart';
 
+import '../database/oracle_operation_queue.dart';
 import '../models/legacy_unit_model.dart';
 
 class LegacyUnitRepository {
-  // الاتصال بقاعدة بيانات Oracle.
+  // اتصال Oracle المشترك.
   final OracleConnection connection;
 
-  LegacyUnitRepository({
-    required this.connection,
-  });
+  // الطابور المشترك لتنظيم عمليات Oracle.
+  final OracleOperationQueue queue;
+
+  LegacyUnitRepository({required this.connection, required this.queue});
 
   // جلب كل وحدات وأسعار الصنف.
-  Future<List<LegacyUnitModel>> findByItemCode(
-    String itemCode,
-  ) async {
+  Future<List<LegacyUnitModel>> findByItemCode(String itemCode) async {
     const query = '''
       SELECT
         UE.ITEM_CODE,
@@ -29,7 +28,7 @@ class LegacyUnitRepository {
 
         UE.UNIT_MASTER,
         UE.BAL_UNIT_CODE,
-       U2.UNIT_NAME AS UNIT_NAME2,
+        U2.UNIT_NAME AS UNIT_NAME2,
         UE.CONV_VAL
 
       FROM UNITES UE
@@ -45,15 +44,12 @@ class LegacyUnitRepository {
       ORDER BY UE.UNIT_CODE
     ''';
 
-    // تمرير كود الصنف بشكل آمن.
-    final result = await connection.execute(
-      query,
-      {'item_code': itemCode},
-    );
+    return queue.run(() async {
+      final result = await connection.execute(query, {'item_code': itemCode});
 
-    // تحويل كل سجل إلى LegacyUnitModel.
-    return result.rows.map((row) {
-      return LegacyUnitModel.fromMap(row.toMap());
-    }).toList();
+      return result.rows.map((row) {
+        return LegacyUnitModel.fromMap(row.toMap());
+      }).toList();
+    });
   }
 }

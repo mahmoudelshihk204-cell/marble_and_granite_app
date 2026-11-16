@@ -1,15 +1,18 @@
 import 'package:oracledb/oracledb.dart';
 
+import '../database/oracle_operation_queue.dart';
 import '../models/legacy_balance_model.dart';
 
 class LegacyBalanceRepository {
-  // الاتصال بقاعدة بيانات Oracle.
+  // اتصال Oracle المشترك.
   final OracleConnection connection;
 
-  LegacyBalanceRepository({required this.connection});
+  // الطابور المشترك لتنظيم عمليات Oracle.
+  final OracleOperationQueue queue;
+
+  LegacyBalanceRepository({required this.connection, required this.queue});
 
   // جلب أرصدة صنف معين في جميع المستودعات.
-  // الدالة الحالية ستظل كما هي دون تغيير في وظيفتها.
   Future<List<LegacyBalanceModel>> findByItemCode(String itemCode) async {
     const query = '''
       SELECT
@@ -27,16 +30,16 @@ class LegacyBalanceRepository {
       WHERE B.ITEM_CODE = :item_code
     ''';
 
-    final result = await connection.execute(query, {'item_code': itemCode});
+    return queue.run(() async {
+      final result = await connection.execute(query, {'item_code': itemCode});
 
-    return result.rows.map((row) {
-      return LegacyBalanceModel.fromMap(row.toMap());
-    }).toList();
+      return result.rows.map((row) {
+        return LegacyBalanceModel.fromMap(row.toMap());
+      }).toList();
+    });
   }
 
   // حساب إجمالي رصيد الخامة المرتبطة بالصنف.
-  // نستخدم بيانات التصنيف للصنف المطلوب، ثم نجمع أرصدة
-  // كل الأصناف التابعة لنفس الخامة، بما فيها الأرصدة السالبة.
   Future<double?> findRawMaterialBalanceByItemCode(String itemCode) async {
     const query = '''
       SELECT
@@ -58,17 +61,19 @@ class LegacyBalanceRepository {
       WHERE T.ITEM_CODE = :item_code
     ''';
 
-    final result = await connection.execute(query, {'item_code': itemCode});
+    return queue.run(() async {
+      final result = await connection.execute(query, {'item_code': itemCode});
 
-    // لو الصنف غير موجود نرجع null.
-    if (result.rows.isEmpty) {
-      return null;
-    }
+      // لو الصنف غير موجود نرجع null.
+      if (result.rows.isEmpty) {
+        return null;
+      }
 
-    final row = result.rows.first.toMap();
-    final balance = row['RAW_MATERIAL_BALANCE'];
+      final row = result.rows.first.toMap();
+      final balance = row['RAW_MATERIAL_BALANCE'];
 
-    // تحويل قيمة Oracle إلى double لاستخدامها في JSON.
-    return double.tryParse(balance.toString());
+      // تحويل قيمة Oracle إلى double لاستخدامها في JSON.
+      return double.tryParse(balance.toString());
+    });
   }
 }

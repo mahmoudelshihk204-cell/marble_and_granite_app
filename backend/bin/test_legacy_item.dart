@@ -1,7 +1,6 @@
-
 import 'package:backend/database/oracle_connection.dart';
 import 'package:backend/repositories/legacy_item_repository.dart';
-
+import 'package:backend/database/oracle_operation_queue.dart';
 
 Future<void> main() async {
   final database = OracleDatabase();
@@ -9,10 +8,12 @@ Future<void> main() async {
   try {
     // فتح الاتصال بقاعدة بيانات Oracle.
     final connection = await database.connect();
-
+    // إنشاء طابور خاص بالاختبار لتنظيم عمليات Oracle.
+    final queue = OracleOperationQueue();
     // إنشاء Repository باستخدام الاتصال.
     final repository = LegacyItemRepository(
       connection: connection,
+      queue: queue,
     );
 
     // اختبار استرجاع الصنف رقم 1500.
@@ -46,4 +47,3 @@ Future<void> main() async {
     await database.close();
   }
 }
-

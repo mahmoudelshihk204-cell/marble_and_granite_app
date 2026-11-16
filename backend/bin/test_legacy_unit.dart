@@ -1,5 +1,5 @@
-
 import 'package:backend/database/oracle_connection.dart';
+import 'package:backend/database/oracle_operation_queue.dart';
 import 'package:backend/repositories/legacy_unit_repository.dart';
 
 Future<void> main() async {
@@ -7,9 +7,11 @@ Future<void> main() async {
 
   try {
     final connection = await database.connect();
-
+    // إنشاء طابور خاص بالاختبار لتنظيم عمليات Oracle.
+    final queue = OracleOperationQueue();
     final repository = LegacyUnitRepository(
       connection: connection,
+      queue: queue,
     );
 
     // اختبار الصنف 1500.
