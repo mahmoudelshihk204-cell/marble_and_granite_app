@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
+import 'package:marble_and_granite/models/legacy/legacy_unit_model.dart';
+import '../cubit/item_units_cubit/item_units_cubit.dart';
+import '../cubit/item_units_cubit/item_units_state.dart';
 import '../cubit/item_code_search_cubit/item_code_search_cubit.dart';
 import '../cubit/item_code_search_cubit/item_code_search_state.dart';
 import '../models/legacy/legacy_item_model.dart';
@@ -26,7 +28,7 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
   late final ItemCodeSearchCubit cubit;
   late final RawMaterialBalanceCubit rawMaterialBalanceCubit;
   late final ItemBalanceCubit balanceCubit;
-
+  late final ItemUnitsCubit unitsCubit;
   // Controller لاستقبال Item Code عند البحث اليدوي.
   final TextEditingController itemCodeController = TextEditingController();
 
@@ -40,6 +42,8 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
     rawMaterialBalanceCubit = RawMaterialBalanceCubit(repository);
     // إنشاء Cubit المسؤول عن تحميل أرصدة المستودعات.
     balanceCubit = ItemBalanceCubit(repository);
+    // إنشاء Cubit المسؤول عن تحميل وحدات الصنف.
+    unitsCubit = ItemUnitsCubit(repository);
     cubit = ItemCodeSearchCubit(repository);
 
     // لو الصفحة استقبلت Barcode من الكاميرا، نبدأ البحث تلقائياً.
@@ -56,6 +60,7 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
     cubit.close();
     rawMaterialBalanceCubit.close();
     balanceCubit.close();
+    unitsCubit.close();
     super.dispose();
   }
 
@@ -71,15 +76,19 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
         BlocProvider.value(value: cubit),
         BlocProvider.value(value: balanceCubit),
         BlocProvider.value(value: rawMaterialBalanceCubit),
+        BlocProvider.value(value: unitsCubit),
       ],
       child: BlocConsumer<ItemCodeSearchCubit, ItemCodeSearchState>(
         listener: (context, state) async {
           if (state is ItemCodeSearchSuccess) {
-            // أولاً: تحميل أرصدة المستودعات وانتظار انتهاء الطلب.
+            // تحميل أرصدة المخازن.
             await balanceCubit.fetchBalances(state.item.itemCode);
 
-            // ثانياً: تحميل إجمالي رصيد الخامة.
+            // تحميل رصيد الخامة.
             await rawMaterialBalanceCubit.fetchBalance(state.item.itemCode);
+
+            // تحميل وحدات الصنف.
+            await unitsCubit.fetchUnits(state.item.itemCode);
           }
         },
         builder: (context, state) {
@@ -104,7 +113,7 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
                   child: ListTile(
                     leading: Icon(Icons.inventory_2, color: goldColor),
                     title: Text('Item Search'),
-                    subtitle: Text('Search Oracle inventory items'),
+                    
                   ),
                 ),
 
@@ -183,6 +192,7 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
 
                   // عرض إجمالي رصيد الخامة.
                   _buildRawMaterialBalanceSection(),
+                  
                 ],
               ],
             ),
@@ -193,6 +203,7 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
   }
 
   // عرض بيانات الصنف القادمة من Oracle.
+    // عرض بيانات الصنف والوحدة والأبعاد والسعر في كارت واحد.
   Widget _buildItemDetails(LegacyItemModel item) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,45 +212,84 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
           'Item Information',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
-
         const SizedBox(height: 10),
 
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _infoRow('Item Code', item.itemCode),
-                const Divider(),
+        BlocBuilder<ItemUnitsCubit, ItemUnitsState>(
+          builder: (context, state) {
+            // القيم الافتراضية أثناء تحميل الوحدات.
+            String unitName = 'Loading...';
+            String price = 'Loading...';
 
-                _infoRow('Item Name', item.itemName),
-                const Divider(),
+            if (state is ItemUnitsSuccess) {
+              // نبحث عن وحدة المتر المربع لتحديد سعر البيع الخاص بها.
+              for (final unit in state.units) {
+                if (unit.unitName?.trim() == 'م2') {
+                  unitName = unit.unitName ?? '-';
+                  price = unit.salePrice == null
+                      ? 'Not available'
+                      : '${_formatNumber(unit.salePrice)} ج.م / م²';
+                  break;
+                }
+              }
 
-                _infoRow('Block Number', item.alternateCode ?? '-'),
-                const Divider(),
+              // لو الوحدة غير موجودة في البيانات.
+              if (unitName == 'Loading...') {
+                unitName = 'Not available';
+                price = 'Not available';
+              }
+            } else if (state is ItemUnitsError) {
+              unitName = 'Not available';
+              price = 'Not available';
+            }
 
-                _infoRow('Class', item.className ?? '-'),
-                const Divider(),
+            return Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _infoRow('Item Code', item.itemCode),
+                    const Divider(),
 
-                _infoRow('Type', item.typeName ?? '-'),
-                const Divider(),
+                    _infoRow('Item Name', item.itemName),
+                    const Divider(),
 
-                _infoRow('Material', item.materialName ?? '-'),
-                const Divider(),
+                    _infoRow('Block Number', item.alternateCode ?? '-'),
+                    const Divider(),
 
-                _infoRow('Finish', item.finishName ?? '-'),
-                const Divider(),
+                    _infoRow('Class', item.className ?? '-'),
+                    const Divider(),
 
-                _infoRow('Color Code', item.colorCode ?? '-'),
-                const Divider(),
+                    _infoRow('Type', item.typeName ?? '-'),
+                    const Divider(),
 
-                _infoRow(
-                  'Dimensions',
-                  '${item.x ?? '-'} × ${item.y ?? '-'} × ${item.z ?? '-'}',
+                    _infoRow('Material', item.materialName ?? '-'),
+                    const Divider(),
+
+                    _infoRow('Finish', item.finishName ?? '-'),
+                    const Divider(),
+
+                    _infoRow('Color Code', item.colorCode ?? '-'),
+                    const Divider(),
+
+                    
+                    
+
+                    // الأبعاد الفعلية للصنف بالمتر.
+                    _infoRow(
+                      'Dimensions',
+                      '${_formatNumber(item.x)} × '
+                      '${_formatNumber(item.y)} × '
+                      '${_formatNumber(item.z)} م2',
+                    ),
+                    const Divider(),
+
+                    // سعر المتر المربع فقط، وليس إجمالي السعر.
+                    _infoRow('Price / م²', price),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -314,8 +364,7 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
     return BlocBuilder<ItemBalanceCubit, ItemBalanceState>(
       builder: (context, state) {
         // أثناء تحميل الأرصدة.
-        if (state is ItemBalanceLoading ||
-            state is ItemBalanceInitial) {
+        if (state is ItemBalanceLoading || state is ItemBalanceInitial) {
           return const Card(
             child: ListTile(
               leading: CircularProgressIndicator(color: goldColor),
@@ -328,10 +377,7 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
         if (state is ItemBalanceError) {
           return Card(
             child: ListTile(
-              leading: const Icon(
-                Icons.error_outline,
-                color: Colors.orange,
-              ),
+              leading: const Icon(Icons.error_outline, color: Colors.orange),
               title: const Text('Failed to load balances'),
               subtitle: Text(state.message),
             ),
@@ -389,9 +435,7 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
                           title: Text(
                             balance.branchName ??
                                 'Warehouse ${balance.branchCode}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           trailing: Text(
                             _formatNumber(balance.balance),
