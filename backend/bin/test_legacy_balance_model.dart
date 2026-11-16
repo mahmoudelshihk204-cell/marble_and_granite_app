@@ -1,4 +1,3 @@
-
 import 'package:backend/models/legacy_balance_model.dart';
 
 void main() {
@@ -29,9 +28,7 @@ void main() {
 
   // الاختبار الثاني: غياب ITEM_CODE.
   try {
-    LegacyBalanceModel.fromMap({
-      'BRAN_CODE': 1001001001,
-    });
+    LegacyBalanceModel.fromMap({'BRAN_CODE': 1001001001});
     print('Missing ITEM_CODE Test: FAILED');
   } on FormatException {
     print('Missing ITEM_CODE Test: PASSED');
@@ -39,9 +36,7 @@ void main() {
 
   // الاختبار الثالث: غياب BRAN_CODE.
   try {
-    LegacyBalanceModel.fromMap({
-      'ITEM_CODE': 1500,
-    });
+    LegacyBalanceModel.fromMap({'ITEM_CODE': 1500});
     print('Missing BRAN_CODE Test: FAILED');
   } on FormatException {
     print('Missing BRAN_CODE Test: PASSED');

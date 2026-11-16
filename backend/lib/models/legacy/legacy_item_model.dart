@@ -1,4 +1,3 @@
-
 class LegacyItemModel {
   // كود الصنف الأساسي والكود البديل
   final String itemCode;

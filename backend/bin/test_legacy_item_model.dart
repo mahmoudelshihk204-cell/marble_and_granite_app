@@ -1,4 +1,3 @@
-
 import 'package:backend/models/legacy_item_model.dart';
 
 void main() {
@@ -20,9 +19,7 @@ void main() {
 
   // الاختبار الثاني: بيانات ناقصها ITEM_CODE.
   try {
-    LegacyItemModel.fromMap({
-      'ITEM_NAME': 'Invalid Item',
-    });
+    LegacyItemModel.fromMap({'ITEM_NAME': 'Invalid Item'});
 
     print('ERROR: Missing ITEM_CODE was accepted!');
   } on FormatException catch (error) {

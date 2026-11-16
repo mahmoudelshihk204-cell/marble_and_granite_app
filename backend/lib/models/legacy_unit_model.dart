@@ -1,4 +1,3 @@
-
 // بيانات وحدة الصنف وأسعاره.
 class LegacyUnitModel {
   final String itemCode;
@@ -43,14 +42,13 @@ class LegacyUnitModel {
     return num.tryParse(value.toString());
   }
 
-  
   // تحويل قيمة Oracle إلى Boolean.
-// في البيانات الحالية القيمة 1 معناها وحدة أساسية.
-static bool _boolValue(Object? value) {
-  final normalized = value?.toString().trim().toUpperCase();
+  // في البيانات الحالية القيمة 1 معناها وحدة أساسية.
+  static bool _boolValue(Object? value) {
+    final normalized = value?.toString().trim().toUpperCase();
 
-  return normalized == '1' || normalized == 'Y';
-}
+    return normalized == '1' || normalized == 'Y';
+  }
 
   // تحويل بيانات الوحدة والأسعار القادمة من Oracle إلى Model.
   factory LegacyUnitModel.fromMap(Map<String, dynamic> map) {
@@ -83,7 +81,6 @@ static bool _boolValue(Object? value) {
       unitValue: _numberValue(map['UNIT_VAL']),
     );
   }
-
 
   Map<String, dynamic> toJson() {
     return {

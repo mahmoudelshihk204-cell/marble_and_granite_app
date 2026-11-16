@@ -1,4 +1,3 @@
-
 import 'package:backend/models/legacy_unit_model.dart';
 
 void main() {
@@ -35,9 +34,7 @@ void main() {
 
   // الاختبار الثالث: التأكد من رفض غياب ITEM_CODE.
   try {
-    LegacyUnitModel.fromMap({
-      'UNIT_CODE': 1,
-    });
+    LegacyUnitModel.fromMap({'UNIT_CODE': 1});
     print('Missing ITEM_CODE Test: FAILED');
   } on FormatException {
     print('Missing ITEM_CODE Test: PASSED');
@@ -45,9 +42,7 @@ void main() {
 
   // الاختبار الرابع: التأكد من رفض غياب UNIT_CODE.
   try {
-    LegacyUnitModel.fromMap({
-      'ITEM_CODE': 1500,
-    });
+    LegacyUnitModel.fromMap({'ITEM_CODE': 1500});
     print('Missing UNIT_CODE Test: FAILED');
   } on FormatException {
     print('Missing UNIT_CODE Test: PASSED');

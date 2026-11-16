@@ -203,19 +203,19 @@ class LegacyItemApi {
           'itemCode': itemCode,
           'rawMaterialBalance': balance,
         });
-      }  catch (error, stackTrace) {
-  // طباعة الخطأ الأصلي ومكان حدوثه داخل السيرفر.
-  print('========== RAW MATERIAL BALANCE ERROR ==========');
-  print('Item Code: $itemCode');
-  print('Error: $error');
-  print('Stack Trace: $stackTrace');
-  print('================================================');
+      } catch (error, stackTrace) {
+        // طباعة الخطأ الأصلي ومكان حدوثه داخل السيرفر.
+        print('========== RAW MATERIAL BALANCE ERROR ==========');
+        print('Item Code: $itemCode');
+        print('Error: $error');
+        print('Stack Trace: $stackTrace');
+        print('================================================');
 
-  return _jsonResponse(500, {
-    'success': false,
-    'message': 'Failed to fetch raw material balance',
-  });
-}
+        return _jsonResponse(500, {
+          'success': false,
+          'message': 'Failed to fetch raw material balance',
+        });
+      }
     });
 
     // جلب أرصدة الصنف في جميع المستودعات.
