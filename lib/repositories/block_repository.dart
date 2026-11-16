@@ -1,5 +1,5 @@
 import 'package:marble_and_granite/models/legacy/legacy_item_model.dart';
-
+import '../models/legacy/legacy_unit_model.dart';
 import '../models/legacy/legacy_block_model.dart';
 import '../models/legacy/legacy_balance_model.dart';
 import '../services/legacy/legacy_api_service.dart';
@@ -28,7 +28,10 @@ class BlockRepository {
   Future<List<LegacyBalanceModel>> getItemBalances(String itemCode) async {
     return await apiService.getBalances(itemCode);
   }
-
+// جلب وحدات الصنف وأسعارها ومعاملات التحويل.
+Future<List<LegacyUnitModel>> getItemUnits(String itemCode) async {
+  return await apiService.getUnits(itemCode);
+}
   // جلب إجمالي رصيد الخامة المرتبطة بالصنف من Oracle.
   Future<double> getRawMaterialBalance(String itemCode) async {
     return await apiService.getRawMaterialBalance(itemCode);

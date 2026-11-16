@@ -12,7 +12,7 @@ class LegacyApiService {
   // الموبايل والكمبيوتر لازم يكونوا على نفس شبكة Wi-Fi
   final String baseUrl;
 
-  LegacyApiService({String baseUrl = 'http://10.223.157.108:8080'})
+  LegacyApiService({String baseUrl = 'http://192.168.1.22:8080'})
     : baseUrl = baseUrl.replaceFirst(RegExp(r'/$'), '');
 
   // ==========================================
