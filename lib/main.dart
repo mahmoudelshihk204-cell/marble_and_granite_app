@@ -1,10 +1,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:marble_and_granite/pages/home_page.dart';
 import 'package:marble_and_granite/pages/login_page.dart';
-
 import 'package:marble_and_granite/repositories/block_repository.dart';
 import 'package:marble_and_granite/services/legacy/legacy_api_service.dart';
 

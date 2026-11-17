@@ -75,7 +75,12 @@ class LoginPage extends StatelessWidget {
 
                   CustomTextField(hint: 'User Name', icon: Icons.person),
                   SizedBox(height: 3),
-                  CustomTextField(hint: 'Password', icon: Icons.password),
+                  CustomTextField(
+                    hint: 'Password',
+                    icon: Icons.password,
+                    isPassword: true,
+                  ),
+
                   SizedBox(height: 3),
                   CustomTextField(hint: 'Token', icon: Icons.key),
                   SizedBox(height: 50),
