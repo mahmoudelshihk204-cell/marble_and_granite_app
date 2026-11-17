@@ -1,8 +1,7 @@
 // ignore_for_file: unused_import
 import 'package:marble_and_granite/Widgets/legacy/item_information_card.dart';
 import 'package:marble_and_granite/Widgets/legacy/raw_material_balance_section.dart';
-import 'package:marble_and_granite/Widgets/warehouse_balances_section.dart';
-
+import 'package:marble_and_granite/Widgets/legacy/warehouse_balances_section.dart';
 import '../cubit/item_units_cubit/item_units_cubit.dart';
 import '../cubit/item_units_cubit/item_units_state.dart';
 import '../models/legacy/legacy_unit_model.dart';

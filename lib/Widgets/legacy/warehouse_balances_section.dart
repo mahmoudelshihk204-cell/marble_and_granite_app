@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -20,8 +19,7 @@ class WarehouseBalancesSection extends StatelessWidget {
     return BlocBuilder<ItemBalanceCubit, ItemBalanceState>(
       builder: (context, state) {
         // أثناء تحميل الأرصدة.
-        if (state is ItemBalanceLoading ||
-            state is ItemBalanceInitial) {
+        if (state is ItemBalanceLoading || state is ItemBalanceInitial) {
           return const Card(
             child: ListTile(
               leading: CircularProgressIndicator(color: goldColor),
@@ -34,10 +32,7 @@ class WarehouseBalancesSection extends StatelessWidget {
         if (state is ItemBalanceError) {
           return Card(
             child: ListTile(
-              leading: const Icon(
-                Icons.error_outline,
-                color: Colors.orange,
-              ),
+              leading: const Icon(Icons.error_outline, color: Colors.orange),
               title: const Text('Failed to load balances'),
               subtitle: Text(state.message),
             ),
@@ -95,9 +90,7 @@ class WarehouseBalancesSection extends StatelessWidget {
                           title: Text(
                             balance.branchName ??
                                 'Warehouse ${balance.branchCode}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           trailing: Text(
                             _formatNumber(balance.balance),
