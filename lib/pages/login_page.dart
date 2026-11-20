@@ -1,13 +1,117 @@
+
 import 'package:flutter/material.dart';
 import 'package:marble_and_granite/Constant/constants.dart';
 import 'package:marble_and_granite/Widgets/custom_bottom.dart';
 import 'package:marble_and_granite/Widgets/custom_text_feild.dart';
 import 'package:marble_and_granite/Widgets/saved_bottom.dart';
 import 'package:marble_and_granite/pages/home_page.dart';
+import 'package:marble_and_granite/services/login_storage_service.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
   static String id = 'LoginPage';
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  // Controllers للتحكم في بيانات حقول تسجيل الدخول.
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _tokenController = TextEditingController();
+
+  // خدمة حفظ واسترجاع البيانات بشكل آمن.
+  final LoginStorageService _storageService = LoginStorageService();
+
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // استرجاع البيانات المحفوظة بمجرد فتح صفحة Login.
+    _loadSavedCredentials();
+  }
+
+  // تحميل بيانات الدخول المحفوظة.
+  Future<void> _loadSavedCredentials() async {
+    try {
+      final credentials = await _storageService.loadCredentials();
+
+      if (!mounted) return;
+
+      _usernameController.text = credentials['username'] ?? '';
+      _passwordController.text = credentials['password'] ?? '';
+      _tokenController.text = credentials['token'] ?? '';
+    } catch (e) {
+      debugPrint('Error loading saved credentials: $e');
+    }
+  }
+
+  // حفظ بيانات الدخول على الجهاز.
+  Future<void> _saveCredentials() async {
+    // منع الضغط المتكرر أثناء عملية الحفظ.
+    if (_isSaving) return;
+
+    // التأكد إن الحقول الثلاثة مش فاضية.
+    if (_usernameController.text.trim().isEmpty ||
+        _passwordController.text.isEmpty ||
+        _tokenController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill in all fields first'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await _storageService.saveCredentials(
+        username: _usernameController.text,
+        password: _passwordController.text,
+        token: _tokenController.text,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account saved successfully'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save account: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    // تحرير الـ Controllers عند إغلاق الصفحة.
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _tokenController.dispose();
+
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,13 +124,14 @@ class LoginPage extends StatelessWidget {
         surfaceTintColor: Colors.transparent,
         centerTitle: true,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(30),
+          ),
         ),
         title: Text(
           'Marble And Granite',
           style: TextStyle(
             fontFamily: 'Tuffy',
-            //fontStyle: FontStyle.italic,
             fontWeight: FontWeight.bold,
             fontSize: 30,
             color: Color(0xffC5A46D),
@@ -36,9 +141,11 @@ class LoginPage extends StatelessWidget {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-
         decoration: const BoxDecoration(
-          image: DecorationImage(image: kImage, fit: BoxFit.cover),
+          image: DecorationImage(
+            image: kImage,
+            fit: BoxFit.cover,
+          ),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -48,6 +155,7 @@ class LoginPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(height: 5),
+
                   Text(
                     'LogIn',
                     style: TextStyle(
@@ -56,6 +164,7 @@ class LoginPage extends StatelessWidget {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
+
                   Center(
                     child: SizedBox(
                       height: 230,
@@ -73,25 +182,45 @@ class LoginPage extends StatelessWidget {
                     ),
                   ),
 
-                  CustomTextField(hint: 'User Name', icon: Icons.person),
+                  // حقل اسم المستخدم.
+                  CustomTextField(
+                    hint: 'User Name',
+                    icon: Icons.person,
+                    controller: _usernameController,
+                  ),
+
                   SizedBox(height: 3),
+
+                  // حقل كلمة المرور.
                   CustomTextField(
                     hint: 'Password',
                     icon: Icons.password,
                     isPassword: true,
+                    controller: _passwordController,
                   ),
 
                   SizedBox(height: 3),
-                  CustomTextField(hint: 'Token', icon: Icons.key),
+
+                  // حقل الـ Token.
+                  CustomTextField(
+                    hint: 'Token',
+                    icon: Icons.key,
+                    controller: _tokenController,
+                  ),
+
                   SizedBox(height: 50),
 
                   Center(
                     child: SavedBottom(
                       bottonName: 'Saved account',
                       containerColor: const Color.fromARGB(255, 96, 96, 96),
+                      isloading: _isSaving,
+                      ontap: _saveCredentials,
                     ),
                   ),
+
                   SizedBox(height: 10),
+
                   CustomBotton(
                     bottonName: 'Login',
                     containerColor: kTextColor,
@@ -108,11 +237,13 @@ class LoginPage extends StatelessWidget {
                   ),
 
                   SizedBox(height: 10),
+
                   CustomBotton(
                     bottonName: 'Offline Mode',
                     containerColor: const Color.fromARGB(255, 96, 96, 96),
                     fontColor: Colors.white,
                   ),
+
                   SizedBox(height: 15),
                 ],
               ),
