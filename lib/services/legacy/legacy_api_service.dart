@@ -14,7 +14,7 @@ class LegacyApiService {
   // الموبايل والكمبيوتر لازم يكونوا على نفس شبكة Wi-Fi
   final String baseUrl;
 
-  LegacyApiService({String baseUrl = 'http://10.31.101.108:8080'})
+  LegacyApiService({String baseUrl = 'http://10.53.1.108:8080'})
     : baseUrl = baseUrl.replaceFirst(RegExp(r'/$'), '');
 
   // ==========================================
@@ -72,6 +72,7 @@ class LegacyApiService {
   // استخراج Item Code بيتم هنا مرة واحدة فقط.
   Future<LegacyItemModel?> searchByBarcode(String barcode) async {
     final normalizedBarcode = barcode.trim();
+    
 
     if (normalizedBarcode.length <= 4) {
       throw ArgumentError('Invalid Barcode');
@@ -81,7 +82,10 @@ class LegacyApiService {
       3,
       normalizedBarcode.length - 1,
     );
-
+           debugPrint('========== BARCODE SEARCH ==========');
+           debugPrint('SCANNED BARCODE: $normalizedBarcode');
+           debugPrint('EXTRACTED ITEM CODE: $itemCode');
+           
     return _searchItem(itemCode);
   }
 
@@ -309,41 +313,67 @@ class LegacyApiService {
   }
 
   // البحث عن الصنف من خلال الـ Backend الجديد.
-  Future<LegacyItemModel?> _searchItem(String itemCode) async {
-    // استرجاع بيانات المستخدم المحفوظة.
-    final credentials = await LoginStorageService().loadCredentials();
+ Future<LegacyItemModel?> _searchItem(String itemCode) async {
+  debugPrint('========== SEARCH ITEM START ==========');
+  debugPrint('ITEM CODE: $itemCode');
 
-    final username = credentials['username'];
-    final password = credentials['password'];
-    final token = credentials['token'];
+  // المرحلة الأولى: استرجاع بيانات المستخدم
+  debugPrint('STEP 1: Loading credentials...');
 
-    // التأكد إن بيانات تسجيل الدخول موجودة.
-    if (username == null ||
-        password == null ||
-        token == null ||
-        username.isEmpty ||
-        password.isEmpty ||
-        token.isEmpty) {
-      throw Exception('Login credentials not found');
-    }
+  final credentials = await LoginStorageService()
+      .loadCredentials()
+      .timeout(const Duration(seconds: 10));
 
-    // إنشاء Client للاتصال بالـ Backend.
-    final client = BackendApiClient(baseUrl: baseUrl);
+  debugPrint('STEP 2: Credentials loaded');
 
-    try {
-      // إرسال Item Code إلى نفس عملية البحث المستخدمة للباركود.
-      final data = await client.searchByBarcode(
-        username: username,
-        password: password,
-        token: token,
-        barcode: itemCode,
-      );
+  final username = credentials['username'];
+  final password = credentials['password'];
+  final token = credentials['token'];
 
-      // تحويل البيانات المستلمة إلى موديل الصنف.
-      return LegacyItemModel.fromJson(data);
-    } finally {
-      // إغلاق الاتصال بعد انتهاء الطلب.
-      client.close();
-    }
+  if (username == null ||
+      password == null ||
+      token == null ||
+      username.isEmpty ||
+      password.isEmpty ||
+      token.isEmpty) {
+    throw Exception('Login credentials not found');
   }
+
+  debugPrint('STEP 3: Credentials validated');
+
+  final client = BackendApiClient(baseUrl: baseUrl);
+
+  try {
+    debugPrint('STEP 4: Sending request to backend...');
+
+    final data = await client.searchByBarcode(
+      username: username,
+      password: password,
+      token: token,
+      barcode: itemCode,
+    ).timeout(const Duration(seconds: 30));
+
+    debugPrint('STEP 5: Backend response received');
+    debugPrint('RESPONSE DATA: $data');
+
+    // تحويل الاستجابة إلى موديل الصنف
+    debugPrint('STEP 6: Parsing LegacyItemModel');
+
+    final item = LegacyItemModel.fromJson(data);
+
+    debugPrint('STEP 7: Model parsed successfully');
+    debugPrint('ITEM NAME: ${item.itemName}');
+    debugPrint('ITEM CODE: ${item.itemCode}');
+
+    return item;
+  } catch (error, stackTrace) {
+    debugPrint('========== SEARCH ITEM ERROR ==========');
+    debugPrint('ERROR: $error');
+    debugPrint('STACK TRACE: $stackTrace');
+    rethrow;
+  } finally {
+    client.close();
+    debugPrint('BACKEND CLIENT CLOSED');
+  }
+}
 }

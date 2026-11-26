@@ -1,19 +1,17 @@
+import 'barcode_warehouse_balance_model.dart';
+
 class LegacyItemModel {
-  // كود الصنف الأساسي والكود البديل
   final String itemCode;
   final String? alternateCode;
 
-  // أسماء الصنف
   final String itemName;
   final String? itemName2;
   final String? itemNameEn;
 
-  // أبعاد الصنف
   final double? x;
   final double? y;
   final double? z;
 
-  // أكواد التصنيف
   final String? classCode;
   final String? typeCode;
   final String? materialCode;
@@ -21,14 +19,24 @@ class LegacyItemModel {
   final String? colorCode;
   final String? flagCode;
 
-  // أسماء التصنيفات
   final String? className;
   final String? typeName;
   final String? materialName;
   final String? finishName;
 
-  // تاريخ آخر تحديث
   final DateTime? systemDate;
+
+  // بيانات الوحدة والسعر القادمة من Barcode API.
+  final String? unitName;
+  final String? unitCode;
+  final double? price;
+
+  // إجماليات TopSoftware كما وصلت، دون افتراض معناها.
+  final double? totalOverBlock;
+  final double? totalOverCompany;
+
+  // أرصدة المستودعات وعدد القطع.
+  final List<BarcodeWarehouseBalanceModel> warehouseBalances;
 
   const LegacyItemModel({
     required this.itemCode,
@@ -50,63 +58,101 @@ class LegacyItemModel {
     this.materialName,
     this.finishName,
     this.systemDate,
+    this.unitName,
+    this.unitCode,
+    this.price,
+    this.totalOverBlock,
+    this.totalOverCompany,
+    this.warehouseBalances = const [],
   });
 
-  // تحويل JSON القادم من السيرفر إلى Dart Object
   factory LegacyItemModel.fromJson(Map<String, dynamic> json) {
-    // كود الصنف واسمه حقول أساسية ولازم يكونوا موجودين
-    if (json['itemCode'] == null) {
+    // التعامل مع البيانات سواء وصلت مباشرة أو داخل metaData.
+    final data = json['metaData'] is Map
+        ? Map<String, dynamic>.from(json['metaData'])
+        : json['data'] is Map && (json['data'] as Map)['metaData'] is Map
+        ? Map<String, dynamic>.from((json['data'] as Map)['metaData'])
+        : json;
+
+    if (data['itemCode'] == null) {
       throw const FormatException('itemCode is missing');
     }
 
-    if (json['itemName'] == null) {
+    if (data['itemName'] == null) {
       throw const FormatException('itemName is missing');
     }
 
+    // قراءة جدول المستودعات القادم من TopSoftware.
+    final rawTable = data['table'];
+    final warehouses = rawTable is List
+        ? rawTable
+              .whereType<Map>()
+              .map(
+                (row) => BarcodeWarehouseBalanceModel.fromJson(
+                  Map<String, dynamic>.from(row),
+                ),
+              )
+              .toList()
+        : <BarcodeWarehouseBalanceModel>[];
+
+    // قراءة الاسم الإنجليزي من اللغات إذا كان متاحًا فعلًا.
+    final languages = data['itemNameLanguages'];
+    final englishName = languages is Map ? _stringValue(languages['En']) : null;
+
     return LegacyItemModel(
-      itemCode: json['itemCode'].toString(),
-      itemName: json['itemName'].toString(),
-      alternateCode: _stringValue(json['alternateCode']),
-      itemName2: _stringValue(json['itemName2']),
-      itemNameEn: _stringValue(json['itemNameEn']),
-      // قراءة الأبعاد من Oracle القديم أو TopSoftware API.
-      x: _numberValue(json['x'] ?? json['xdimension']),
-      y: _numberValue(json['y'] ?? json['ydimension']),
-      z: _numberValue(json['z'] ?? json['zdimension']),
-      classCode: _stringValue(json['classCode']),
-      typeCode: _stringValue(json['typeCode']),
-      materialCode: _stringValue(json['materialCode']),
-      finishCode: _stringValue(json['finishCode']),
-      colorCode: _stringValue(json['colorCode']),
-      flagCode: _stringValue(json['flagCode']),
-      className: _stringValue(json['className']),
-      typeName: _stringValue(json['typeName']),
-      materialName: _stringValue(json['materialName']),
-      finishName: _stringValue(json['finishName']),
-      systemDate: _dateValue(json['systemDate']),
+      itemCode: data['itemCode'].toString(),
+      itemName: data['itemName'].toString(),
+
+      // TopSoftware بيرجع رقم البلوك باسم blockNumber.
+      alternateCode: _stringValue(data['blockNumber'] ?? data['alternateCode']),
+      itemName2: _stringValue(data['itemName2']),
+      itemNameEn: englishName == '0' ? null : englishName,
+
+      x: _numberValue(data['x'] ?? data['xdimension']),
+      y: _numberValue(data['y'] ?? data['ydimension']),
+      z: _numberValue(data['z'] ?? data['zdimension']),
+
+      classCode: _stringValue(data['classCode']),
+      typeCode: _stringValue(data['typeCode']),
+      materialCode: _stringValue(data['materialCode']),
+      finishCode: _stringValue(data['finishCode']),
+      colorCode: _stringValue(data['colorCode']),
+      flagCode: _stringValue(data['flagCode']),
+
+      className: _stringValue(data['className']),
+      typeName: _stringValue(data['typeName']),
+      materialName: _stringValue(data['materialName']),
+      finishName: _stringValue(data['finishName']),
+
+      systemDate: _dateValue(data['systemDate']),
+
+      unitName: _stringValue(data['unit']),
+      unitCode: _stringValue(data['unitCode']),
+      price: _numberValue(data['price']),
+
+      totalOverBlock: _numberValue(data['totalOverBlock']),
+      totalOverCompany: _numberValue(data['totalOverCompany']),
+
+      warehouseBalances: warehouses,
     );
   }
 
-  // تحويل القيم النصية مع التعامل مع null
   static String? _stringValue(dynamic value) {
     if (value == null) return null;
     return value.toString();
   }
 
-  // تحويل الأرقام سواء وصلت int أو double أو String
   static double? _numberValue(dynamic value) {
     if (value == null) return null;
     if (value is num) return value.toDouble();
     return double.tryParse(value.toString());
   }
 
-  // تحويل التاريخ مع تجنب الخطأ لو القيمة غير صالحة
   static DateTime? _dateValue(dynamic value) {
     if (value == null) return null;
     return DateTime.tryParse(value.toString());
   }
 
-  // تحويل الـ Object مرة أخرى إلى JSON
   Map<String, dynamic> toJson() {
     return {
       'itemCode': itemCode,
@@ -128,6 +174,12 @@ class LegacyItemModel {
       'materialName': materialName,
       'finishName': finishName,
       'systemDate': systemDate?.toIso8601String(),
+      'unit': unitName,
+      'unitCode': unitCode,
+      'price': price,
+      'totalOverBlock': totalOverBlock,
+      'totalOverCompany': totalOverCompany,
+      'table': warehouseBalances.map((e) => e.toJson()).toList(),
     };
   }
 }

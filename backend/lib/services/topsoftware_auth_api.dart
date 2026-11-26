@@ -28,7 +28,11 @@ class TopSoftwareAuthApi {
 
     // فك تشفير الجزء الأوسط واستخراج BaseURL.
     final baseUrl = TokenService.decryptBaseUrl(token);
+// طباعة عنوان السيرفر بعد فك التشفير للتأكد من صحته.
+print('TOPSOFTWARE BASE URL: $baseUrl');
 
+// طباعة اسم الـ Schema فقط.
+print('TOPSOFTWARE SCHEMA: $schema');
     return TopSoftwareApiClient(
       baseUrl: baseUrl,
       username: username.trim(),
@@ -138,6 +142,7 @@ class TopSoftwareAuthApi {
     // ==========================================
     router.post('/api/items/search/barcode', (Request request) async {
       TopSoftwareApiClient? client;
+      
 
       try {
         // قراءة بيانات الطلب مرة واحدة.
@@ -155,6 +160,8 @@ class TopSoftwareAuthApi {
         final password = body['password'];
         final token = body['token'];
         final barcode = body['barcode'];
+        print('========== BACKEND BARCODE SEARCH ==========');
+print('RECEIVED ITEM CODE: ${barcode.trim()}');
 
         // التحقق من بيانات الدخول والباركود.
         if (username is! String ||

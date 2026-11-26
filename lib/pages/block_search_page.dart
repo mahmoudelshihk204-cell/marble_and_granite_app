@@ -211,7 +211,7 @@ class _BlockSearchPageState extends State<BlockSearchPage> {
               children: [
                 _infoRow('Block Number', summary.blockNumber),
 
-                const Divider(),
+               
                 const Divider(),
 
                 _infoRow('Item Code', summary.itemCode),

@@ -14,20 +14,23 @@ class BackendApiClient {
 
   // البحث عن صنف باستخدام الباركود من خلال الـ Backend.
   Future<Map<String, dynamic>> searchByBarcode({
-    required String username,
-    required String password,
-    required String token,
-    required String barcode,
-  }) async {
-    // التأكد إن الباركود مش فاضي.
-    if (barcode.trim().isEmpty) {
-      throw ArgumentError('Barcode cannot be empty');
-    }
+  required String username,
+  required String password,
+  required String token,
+  required String barcode,
+}) async {
+  if (barcode.trim().isEmpty) {
+    throw ArgumentError('Barcode cannot be empty');
+  }
 
-    // تحديد رابط الـ API.
-    final uri = Uri.parse('$baseUrl/api/items/search/barcode');
+  final uri = Uri.parse('$baseUrl/api/items/search/barcode');
 
-    // إرسال البيانات للـ Backend بصيغة JSON.
+  try {
+    print('========== BACKEND BARCODE REQUEST ==========');
+    print('URL: $uri');
+    print('ITEM CODE SENT: $barcode');
+
+    // إرسال الطلب للـ Backend
     final response = await _client
         .post(
           uri,
@@ -44,36 +47,40 @@ class BackendApiClient {
         )
         .timeout(const Duration(seconds: 30));
 
-    // تحويل رد السيرفر من JSON إلى Map.
-    final dynamic decodedBody;
+    print('========== BACKEND RESPONSE ==========');
+    print('STATUS CODE: ${response.statusCode}');
+    print('RESPONSE BODY: ${response.body}');
 
-    try {
-      decodedBody = jsonDecode(response.body);
-    } on FormatException {
-      throw Exception('Invalid JSON response from backend');
-    }
+    // تحويل الرد إلى JSON
+    final dynamic decodedBody = jsonDecode(response.body);
 
-    // التأكد إن الرد عبارة عن JSON Object.
     if (decodedBody is! Map<String, dynamic>) {
       throw Exception('Invalid backend response format');
     }
 
-    // لو الطلب فشل، نوقف التنفيذ ونرجع رسالة الخطأ.
     if (response.statusCode != 200 || decodedBody['success'] != true) {
-      throw Exception(decodedBody['message'] ?? 'Barcode search failed');
+      throw Exception(
+        decodedBody['message']?.toString() ?? 'Barcode search failed',
+      );
     }
 
-    // استخراج بيانات الصنف من الرد.
     final data = decodedBody['data'];
 
-    // التأكد إن بيانات الصنف موجودة بالشكل المتوقع.
     if (data is! Map<String, dynamic>) {
-      throw Exception('Item data is missing');
+      throw Exception('Item data is missing or invalid');
     }
 
-    // إرجاع بيانات الصنف بعد نجاح البحث.
+    print('========== DATA EXTRACTED SUCCESSFULLY ==========');
+    print('DATA KEYS: ${data.keys.toList()}');
+
     return data;
+  } catch (error, stackTrace) {
+    print('========== BACKEND CLIENT ERROR ==========');
+    print('ERROR: $error');
+    print(stackTrace);
+    rethrow;
   }
+}
 
  
 

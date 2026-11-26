@@ -45,59 +45,83 @@ class TopSoftwareApiClient {
 
     return '$url$apiPath';
   }
-  // تسجيل الدخول والحصول على بيانات الجلسة.
+  
 Future<TopSoftwareSession> login() async {
   final uri = Uri.parse('$_baseUrl/login');
 
-  final response = await _client
-      .post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'username': username,
-          'password': password,
-          'schema': schema,
-        }),
-      )
-      .timeout(const Duration(seconds: 30));
+  // تسجيل وقت بداية محاولة الاتصال.
+  final stopwatch = Stopwatch()..start();
 
-  final json = _decodeResponse(response);
+  try {
+    print('========== TOPSOFTWARE LOGIN ==========');
+    print('LOGIN URL: $uri');
+    print('LOGIN STARTED');
 
-  if (response.statusCode != 200 || json['statusCode'] != 200) {
-    throw TopSoftwareApiException(
-      'Login failed: ${json['message'] ?? response.body}',
+    final response = await _client
+        .post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Connection': 'close',
+          },
+          body: jsonEncode({
+            'username': username,
+            'password': password,
+            'schema': schema,
+          }),
+        )
+        .timeout(const Duration(seconds: 60));
+
+    print('LOGIN RESPONSE RECEIVED');
+    print('LOGIN STATUS: ${response.statusCode}');
+    print('LOGIN TIME: ${stopwatch.elapsed}');
+    
+    final json = _decodeResponse(response);
+
+    if (response.statusCode != 200 || json['statusCode'] != 200) {
+      throw TopSoftwareApiException(
+        'Login failed: ${json['message'] ?? response.body}',
+      );
+    }
+
+    final data = json['data'];
+
+    if (data is! Map) {
+      throw TopSoftwareApiException('Login data is missing.');
+    }
+
+    final metaData = data['metaData'];
+
+    if (metaData is! Map) {
+      throw TopSoftwareApiException('Login metadata is missing.');
+    }
+
+    final loginCount = metaData['loginCount']?.toString() ?? '';
+    final employeeNo = metaData['employeeNumber']?.toString() ?? '';
+
+    if (loginCount.isEmpty || employeeNo.isEmpty) {
+      throw TopSoftwareApiException(
+        'Session information is incomplete.',
+      );
+    }
+
+    print('LOGIN SUCCESS');
+    
+    return TopSoftwareSession(
+      loginCount: loginCount,
+      employeeNo: employeeNo,
     );
+  } catch (error) {
+    print('LOGIN FAILED: $error');
+    print('LOGIN ELAPSED: ${stopwatch.elapsed}');
+    rethrow;
+  } finally {
+    stopwatch.stop();
+    print('======================================');
   }
-
-  final data = json['data'];
-
-  if (data is! Map) {
-    throw TopSoftwareApiException('Login data is missing.');
-  }
-
-  final metaData = data['metaData'];
-
-  if (metaData is! Map) {
-    throw TopSoftwareApiException('Login metadata is missing.');
-  }
-
-  final loginCount = metaData['loginCount']?.toString() ?? '';
-  final employeeNo = metaData['employeeNumber']?.toString() ?? '';
-
-  if (loginCount.isEmpty || employeeNo.isEmpty) {
-    throw TopSoftwareApiException(
-      'Session information is incomplete.',
-    );
-  }
-
-  return TopSoftwareSession(
-    loginCount: loginCount,
-    employeeNo: employeeNo,
-  );
 }
+
 
   // البحث بالباركود بعد تسجيل الدخول.
   Future<Map<String, dynamic>> searchByBarcode(String barcode) async {
@@ -142,9 +166,11 @@ Future<TopSoftwareSession> login() async {
     if (item is! Map) {
       throw TopSoftwareApiException('Item metadata is missing.');
     }
-
+print('BARCODE STATUS: ${response.statusCode}');
+print('BARCODE RESPONSE: ${response.body}');
     // الاحتفاظ بكل الحقول الراجعة من API.
     return Map<String, dynamic>.from(item);
+    
   }
 
 

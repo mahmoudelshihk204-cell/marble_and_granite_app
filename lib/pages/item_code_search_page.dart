@@ -3,8 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:marble_and_granite/Widgets/legacy/item_information_card.dart';
 import 'package:marble_and_granite/Widgets/legacy/raw_material_balance_section.dart';
 import 'package:marble_and_granite/Widgets/legacy/warehouse_balances_section.dart';
-
-
 import 'package:marble_and_granite/models/legacy/legacy_unit_model.dart';
 import '../cubit/item_units_cubit/item_units_cubit.dart';
 import '../cubit/item_units_cubit/item_units_state.dart';
@@ -27,7 +25,6 @@ class ItemCodeSearchPage extends StatefulWidget {
 
 class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
   static const goldColor = Color(0xffC5A46D);
-
   late final ItemCodeSearchCubit cubit;
   late final RawMaterialBalanceCubit rawMaterialBalanceCubit;
   late final ItemBalanceCubit balanceCubit;
@@ -77,21 +74,21 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: cubit),
-        BlocProvider.value(value: balanceCubit),
-        BlocProvider.value(value: rawMaterialBalanceCubit),
-        BlocProvider.value(value: unitsCubit),
+      //  BlocProvider.value(value: balanceCubit),
+      //  BlocProvider.value(value: rawMaterialBalanceCubit),
+       // BlocProvider.value(value: unitsCubit),
       ],
       child: BlocConsumer<ItemCodeSearchCubit, ItemCodeSearchState>(
         listener: (context, state) async {
           if (state is ItemCodeSearchSuccess) {
             // تحميل أرصدة المخازن.
-            await balanceCubit.fetchBalances(state.item.itemCode);
+           // await balanceCubit.fetchBalances(state.item.itemCode);
 
             // تحميل رصيد الخامة.
-            await rawMaterialBalanceCubit.fetchBalance(state.item.itemCode);
+          //  await rawMaterialBalanceCubit.fetchBalance(state.item.itemCode);
 
             // تحميل وحدات الصنف.
-            await unitsCubit.fetchUnits(state.item.itemCode);
+           // await unitsCubit.fetchUnits(state.item.itemCode);
           }
         },
         builder: (context, state) {
@@ -188,7 +185,7 @@ class _ItemCodeSearchPageState extends State<ItemCodeSearchPage> {
                   const SizedBox(height: 16),
 
                   // عرض أرصدة كل المستودعات.
-                  const WarehouseBalancesSection(),
+                  WarehouseBalancesSection(balances: item.warehouseBalances),
 
                   const SizedBox(height: 16),
 
