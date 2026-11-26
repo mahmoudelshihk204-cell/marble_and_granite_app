@@ -10,7 +10,7 @@ class LegacyBlockModel {
     required this.slabs,
   });
 
-  // تحويل استجابة السيرفر إلى موديل البلوك
+  // تحويل استجابة السيرفر إلى موديل البلوك.
   factory LegacyBlockModel.fromJson(Map<String, dynamic> json) {
     final summaryJson = _mapValue(json['summary']);
 
@@ -40,28 +40,37 @@ class LegacyBlockModel {
   }
 }
 
-// ملخص بيانات البلوك
+// ملخص بيانات البلوك.
 class LegacyBlockSummaryModel {
   final String blockNumber;
+  final String itemCode;
+  final String itemName;
   final int slabCount;
+  final int quantity;
   final double totalBalance;
 
   const LegacyBlockSummaryModel({
     required this.blockNumber,
+    required this.itemCode,
+    required this.itemName,
     required this.slabCount,
+    this.quantity = 0,
     required this.totalBalance,
   });
 
   factory LegacyBlockSummaryModel.fromJson(Map<String, dynamic> json) {
     return LegacyBlockSummaryModel(
       blockNumber: json['blockNumber']?.toString() ?? '',
+      itemCode: json['itemCode']?.toString() ?? '',
+      itemName: json['itemName']?.toString() ?? '',
       slabCount: _intValue(json['slabCount']),
+      quantity: _intValue(json['quantity']),
       totalBalance: _numberValue(json['totalBalance']),
     );
   }
 }
 
-// إجمالي رصيد البلوك في كل مستودع
+// إجمالي رصيد البلوك في كل مستودع.
 class LegacyWarehouseTotalModel {
   final String? warehouseName;
   final double totalBalance;
@@ -81,7 +90,7 @@ class LegacyWarehouseTotalModel {
   }
 }
 
-// تفاصيل اللوح الواحد
+// تفاصيل اللوح الواحد.
 class LegacyBlockSlabModel {
   final String itemCode;
   final String? itemName;
@@ -120,7 +129,7 @@ class LegacyBlockSlabModel {
   }
 }
 
-// رصيد اللوح في مستودع معين
+// رصيد اللوح في مستودع معين.
 class LegacySlabBalanceModel {
   final String? warehouseName;
   final double balance;
@@ -140,7 +149,7 @@ class LegacySlabBalanceModel {
   }
 }
 
-// تحويل القيم الرقمية بأمان
+// تحويل القيم الرقمية بأمان.
 double _numberValue(dynamic value) {
   if (value is num) return value.toDouble();
   return double.tryParse(value?.toString() ?? '') ?? 0;

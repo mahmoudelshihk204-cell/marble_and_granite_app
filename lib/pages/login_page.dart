@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:marble_and_granite/Constant/constants.dart';
 import 'package:marble_and_granite/Widgets/custom_bottom.dart';
@@ -6,6 +5,7 @@ import 'package:marble_and_granite/Widgets/custom_text_feild.dart';
 import 'package:marble_and_granite/Widgets/saved_bottom.dart';
 import 'package:marble_and_granite/pages/home_page.dart';
 import 'package:marble_and_granite/services/login_storage_service.dart';
+import 'package:marble_and_granite/services/backend_api_client.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -60,9 +60,7 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text.isEmpty ||
         _tokenController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all fields first'),
-        ),
+        const SnackBar(content: Text('Please fill in all fields first')),
       );
       return;
     }
@@ -81,19 +79,81 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account saved successfully'),
-        ),
+        const SnackBar(content: Text('Account saved successfully')),
       );
     } catch (e) {
       if (!mounted) return;
 
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to save account: $e')));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  // تسجيل الدخول والتحقق من البيانات عن طريق الـ Backend.
+  Future<void> _login() async {
+    if (_isSaving) return;
+
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text;
+    final token = _tokenController.text.trim();
+
+    if (username.isEmpty || password.isEmpty || token.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields first')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    final client = BackendApiClient(baseUrl: 'http://10.31.101.108:8080');
+
+    try {
+      // إرسال بيانات الدخول والتحقق منها.
+      final result = await client.login(
+        username: username,
+        password: password,
+        token: token,
+      );
+
+      // حفظ البيانات بعد نجاح تسجيل الدخول فقط.
+      await _storageService.saveCredentials(
+        username: username,
+        password: password,
+        token: token,
+      );
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to save account: $e'),
+          content: Text(result['message']?.toString() ?? 'Login successful'),
         ),
       );
+
+      // الانتقال للصفحة الرئيسية بعد نجاح التحقق.
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => HomePage()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Login failed: $e')));
     } finally {
+      client.close();
+
       if (mounted) {
         setState(() {
           _isSaving = false;
@@ -124,9 +184,7 @@ class _LoginPageState extends State<LoginPage> {
         surfaceTintColor: Colors.transparent,
         centerTitle: true,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(30),
-          ),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
         ),
         title: Text(
           'Marble And Granite',
@@ -142,10 +200,7 @@ class _LoginPageState extends State<LoginPage> {
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: kImage,
-            fit: BoxFit.cover,
-          ),
+          image: DecorationImage(image: kImage, fit: BoxFit.cover),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -224,18 +279,8 @@ class _LoginPageState extends State<LoginPage> {
                   CustomBotton(
                     bottonName: 'Login',
                     containerColor: kTextColor,
-                    ontap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) {
-                            return HomePage();
-                          },
-                        ),
-                      );
-                    },
+                    ontap: _login,
                   ),
-
                   SizedBox(height: 10),
 
                   CustomBotton(

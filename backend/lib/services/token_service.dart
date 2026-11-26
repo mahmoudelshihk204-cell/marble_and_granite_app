@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:pointycastle/export.dart';
 
 class TokenService {
+  // مفتاح AES المستخدم في فك تشفير الـ Token.
+  static const String _aesKey = '9s8G7f6R5t4y3E2q';
   // استخراج اسم الـ Schema من أول وآخر حرف في الـ Token
   static String extractSchema(String token) {
     final cleanToken = token.trim();
@@ -31,14 +32,8 @@ class TokenService {
 
   // فك تشفير Base64 ثم AES-128-ECB وإزالة PKCS7 Padding
   static String decryptBaseUrl(String token) {
-    // قراءة المفتاح من متغيرات بيئة السيرفر
-    final key = Platform.environment['TOKEN_AES_KEY'];
-
-    if (key == null || key.isEmpty) {
-      throw StateError('TOKEN_AES_KEY is not configured');
-    }
-
-    final keyBytes = Uint8List.fromList(utf8.encode(key));
+    // استخدام نفس المفتاح الموجود في كود Python.
+    final keyBytes = Uint8List.fromList(utf8.encode(_aesKey));
 
     // التأكد إن المفتاح 16 بايت بالضبط
     if (keyBytes.length != 16) {

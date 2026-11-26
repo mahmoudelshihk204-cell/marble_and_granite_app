@@ -8,6 +8,7 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
+  http: ^1.6.0
   oracledb: ^1.6.0
   pointycastle: 4.0.0
   postgres: 3.6.0

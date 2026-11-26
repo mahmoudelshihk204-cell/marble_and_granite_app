@@ -1,4 +1,3 @@
-
 class LegacyItemModel {
   // كود الصنف الأساسي والكود البديل
   final String itemCode;
@@ -70,9 +69,10 @@ class LegacyItemModel {
       alternateCode: _stringValue(json['alternateCode']),
       itemName2: _stringValue(json['itemName2']),
       itemNameEn: _stringValue(json['itemNameEn']),
-      x: _numberValue(json['x']),
-      y: _numberValue(json['y']),
-      z: _numberValue(json['z']),
+      // قراءة الأبعاد من Oracle القديم أو TopSoftware API.
+      x: _numberValue(json['x'] ?? json['xdimension']),
+      y: _numberValue(json['y'] ?? json['ydimension']),
+      z: _numberValue(json['z'] ?? json['zdimension']),
       classCode: _stringValue(json['classCode']),
       typeCode: _stringValue(json['typeCode']),
       materialCode: _stringValue(json['materialCode']),

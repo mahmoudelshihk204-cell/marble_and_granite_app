@@ -1,10 +1,9 @@
 // ignore_for_file: unused_element
-
 import 'dart:convert';
-
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
-
+import 'package:backend/services/token_service.dart';
+import 'package:backend/services/topsoftware_api_client.dart';
 import '../repositories/legacy_item_repository.dart';
 import '../repositories/legacy_balance_repository.dart';
 import '../repositories/legacy_unit_repository.dart';
@@ -66,7 +65,109 @@ class LegacyItemApi {
 
   Router get router {
     final router = Router();
+    // تسجيل دخول المستخدم باستخدام بياناته والـ Token الخاص به.
+    router.post('/api/auth/login', (Request request) async {
+      TopSoftwareApiClient? client;
 
+      try {
+        // قراءة البيانات المرسلة من Flutter.
+        final requestBody = await request.readAsString();
+
+        final dynamic decodedBody;
+
+        try {
+          decodedBody = jsonDecode(requestBody);
+        } on FormatException {
+          return _jsonResponse(400, {
+            'success': false,
+            'message': 'Invalid JSON request',
+          });
+        }
+
+        // التأكد إن البيانات المرسلة عبارة عن JSON Object.
+        if (decodedBody is! Map) {
+          return _jsonResponse(400, {
+            'success': false,
+            'message': 'Invalid request format',
+          });
+        }
+
+        final username = decodedBody['username'];
+        final password = decodedBody['password'];
+        final token = decodedBody['token'];
+
+        // التأكد من وجود البيانات الثلاثة.
+        if (username is! String ||
+            password is! String ||
+            token is! String ||
+            username.trim().isEmpty ||
+            password.isEmpty ||
+            token.trim().isEmpty) {
+          return _jsonResponse(400, {
+            'success': false,
+            'message': 'Username, password and token are required',
+          });
+        }
+
+        // استخراج اسم الـ Schema من أول وآخر حرف في Token.
+        final schema = TokenService.extractSchema(token);
+
+        // فك تشفير الجزء الأوسط من Token واستخراج BaseURL.
+        final baseUrl = TokenService.decryptBaseUrl(token);
+
+        // إنشاء Client خاص ببيانات المستخدم الحالي.
+        client = TopSoftwareApiClient(
+          baseUrl: baseUrl,
+          username: username.trim(),
+          password: password,
+          schema: schema,
+        );
+
+        // تنفيذ تسجيل الدخول على TopSoftware API الأصلي.
+        final session = await client.login();
+
+        // تسجيل الدخول نجح.
+        return _jsonResponse(200, {
+          'success': true,
+          'message': 'Login successful',
+          'data': {'employeeNumber': session.employeeNo},
+        });
+      } on FormatException {
+        // Token غير صالح أو الجزء المشفر غير سليم.
+        return _jsonResponse(400, {
+          'success': false,
+          'message': 'Invalid token format',
+        });
+      } on TopSoftwareApiException catch (error) {
+        print('TopSoftware login error: $error');
+
+        // فشل تسجيل الدخول بسبب بيانات المستخدم أو استجابة الـ API.
+        if (error.message.startsWith('Login failed:')) {
+          return _jsonResponse(401, {
+            'success': false,
+            'message': 'Invalid username or password',
+          });
+        }
+
+        return _jsonResponse(502, {
+          'success': false,
+          'message': 'TopSoftware login service error',
+        });
+      } catch (error, stackTrace) {
+        print('========== LOGIN ERROR ==========');
+        print('Error: $error');
+        print('Stack Trace: $stackTrace');
+        print('=================================');
+
+        return _jsonResponse(500, {
+          'success': false,
+          'message': 'Internal server error',
+        });
+      } finally {
+        // إغلاق اتصال HTTP الخاص بالطلب بعد انتهاء تسجيل الدخول.
+        client?.close();
+      }
+    });
     // البحث عن الأصناف باستخدام الكود البديل ITEM_CODE2.
     router.get('/api/items/search/alternate/<alternateCode>', (
       Request request,

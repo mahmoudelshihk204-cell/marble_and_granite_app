@@ -1,3 +1,4 @@
+// ignore_for_file: unused_element
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,7 +7,6 @@ import 'package:marble_and_granite/repositories/block_repository.dart';
 import '../cubit/block_search_cubit/block_search_cubit.dart';
 import '../cubit/block_search_cubit/block_search_state.dart';
 import '../models/legacy/legacy_block_model.dart';
-
 
 class BlockSearchPage extends StatefulWidget {
   const BlockSearchPage({super.key});
@@ -22,16 +22,16 @@ class _BlockSearchPageState extends State<BlockSearchPage> {
   // Controller لقراءة رقم البلوك من المستخدم
   final TextEditingController blockController = TextEditingController();
 
- @override
-void initState() {
-  super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-  // الحصول على Repository الذي تم إنشاؤه في main.dart
-  final blockRepository = context.read<BlockRepository>();
+    // الحصول على Repository الذي تم إنشاؤه في main.dart
+    final blockRepository = context.read<BlockRepository>();
 
-  // إنشاء Cubit باستخدام Repository المركزي
-  cubit = BlockSearchCubit(blockRepository);
-}
+    // إنشاء Cubit باستخدام Repository المركزي
+    cubit = BlockSearchCubit(blockRepository);
+  }
 
   @override
   void dispose() {
@@ -52,13 +52,9 @@ void initState() {
           // تحديد حالة الشاشة بناءً على الحالة الصادرة من Cubit
           final isLoading = state is BlockSearchLoading;
 
-          final errorMessage = state is BlockSearchError
-              ? state.message
-              : null;
+          final errorMessage = state is BlockSearchError ? state.message : null;
 
-          final block = state is BlockSearchSuccess
-              ? state.block
-              : null;
+          final block = state is BlockSearchSuccess ? state.block : null;
 
           return Scaffold(
             appBar: AppBar(
@@ -73,10 +69,7 @@ void initState() {
                 // حالة الاتصال بالسيرفر
                 const Card(
                   child: ListTile(
-                    leading: Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                    ),
+                    leading: Icon(Icons.check_circle, color: Colors.green),
                     title: Text('API Connection Successful'),
                     subtitle: Text('Connected to Dart Server'),
                   ),
@@ -86,10 +79,7 @@ void initState() {
 
                 const Text(
                   'Search Block',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 10),
@@ -123,9 +113,9 @@ void initState() {
                         onPressed: isLoading
                             ? null
                             : () {
-                                context
-                                    .read<BlockSearchCubit>()
-                                    .searchBlock(blockController.text);
+                                context.read<BlockSearchCubit>().searchBlock(
+                                  blockController.text,
+                                );
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: goldColor,
@@ -144,9 +134,7 @@ void initState() {
                   const Padding(
                     padding: EdgeInsets.all(30),
                     child: Center(
-                      child: CircularProgressIndicator(
-                        color: goldColor,
-                      ),
+                      child: CircularProgressIndicator(color: goldColor),
                     ),
                   ),
 
@@ -163,9 +151,7 @@ void initState() {
                             size: 28,
                           ),
                           const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(errorMessage),
-                          ),
+                          Expanded(child: Text(errorMessage)),
                         ],
                       ),
                     ),
@@ -180,8 +166,6 @@ void initState() {
                   _buildWarehouseTotals(block, goldColor),
 
                   const SizedBox(height: 20),
-
-                  _buildSlabs(block, goldColor),
                 ],
               ],
             ),
@@ -192,21 +176,30 @@ void initState() {
   }
 
   // ملخص البلوك
-  Widget _buildSummary(
-    LegacyBlockModel block,
-    Color goldColor,
-  ) {
+
+  // ملخص البلوك ومعلومات الأبعاد والوحدة
+  Widget _buildSummary(LegacyBlockModel block, Color goldColor) {
     final summary = block.summary;
+
+    // استخراج الأبعاد المختلفة الموجودة في بيانات البلوك.
+    final dimensions = block.slabs
+        .map((slab) => '${slab.x ?? '-'} × ${slab.y ?? '-'} × ${slab.z ?? '-'}')
+        .toSet()
+        .join(' ، ');
+
+    // استخراج الوحدات المختلفة.
+    final units = block.slabs
+        .map((slab) => slab.unitName)
+        .where((unit) => unit != null && unit.isNotEmpty)
+        .toSet()
+        .join(' ، ');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Block Information',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
 
         const SizedBox(height: 10),
@@ -216,17 +209,26 @@ void initState() {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _infoRow(
-                  'Block Number',
-                  summary.blockNumber,
-                ),
+                _infoRow('Block Number', summary.blockNumber),
+
+                const Divider(),
+                const Divider(),
+
+                _infoRow('Item Code', summary.itemCode),
 
                 const Divider(),
 
-                _infoRow(
-                  'Slab Count',
-                  '${summary.slabCount}',
-                ),
+                _infoRow('Item Name', summary.itemName),
+                const Divider(),
+                _infoRow('الفرز', '${summary.slabCount}'),
+
+                const Divider(),
+
+                _infoRow('Dimensions', dimensions.isEmpty ? '-' : dimensions),
+
+                const Divider(),
+
+                _infoRow('Unit', units.isEmpty ? '-' : units),
 
                 const Divider(),
 
@@ -235,6 +237,9 @@ void initState() {
                   '${summary.totalBalance} m²',
                   valueColor: goldColor,
                 ),
+                const Divider(),
+
+                _infoRow('Quantity', '${summary.quantity}'),
               ],
             ),
           ),
@@ -244,19 +249,13 @@ void initState() {
   }
 
   // إجمالي رصيد البلوك في كل مستودع
-  Widget _buildWarehouseTotals(
-    LegacyBlockModel block,
-    Color goldColor,
-  ) {
+  Widget _buildWarehouseTotals(LegacyBlockModel block, Color goldColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Warehouse Totals',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
 
         const SizedBox(height: 10),
@@ -264,13 +263,8 @@ void initState() {
         ...block.warehouseTotals.map(
           (warehouse) => Card(
             child: ListTile(
-              leading: const Icon(
-                Icons.warehouse,
-                color: Color(0xffC5A46D),
-              ),
-              title: Text(
-                warehouse.warehouseName ?? 'Warehouse',
-              ),
+              leading: const Icon(Icons.warehouse, color: Color(0xffC5A46D)),
+              title: Text(warehouse.warehouseName ?? 'Warehouse'),
               trailing: Text(
                 '${warehouse.totalBalance}',
                 style: TextStyle(
@@ -287,19 +281,20 @@ void initState() {
   }
 
   // تفاصيل الألواح وأرصدة كل لوح
-  Widget _buildSlabs(
-    LegacyBlockModel block,
-    Color goldColor,
-  ) {
+  Widget _buildSlabs(LegacyBlockModel block, Color goldColor) {
+    for (final slab in block.slabs) {
+      debugPrint(
+        'DIMENSIONS DEBUG: '
+        'Code=${slab.itemCode}, '
+        'X=${slab.x}, Y=${slab.y}, Z=${slab.z}',
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Slab Details',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
 
         const SizedBox(height: 10),
@@ -308,16 +303,11 @@ void initState() {
           (slab) => Card(
             clipBehavior: Clip.antiAlias,
             child: ExpansionTile(
-              leading: const Icon(
-                Icons.view_module,
-                color: Color(0xffC5A46D),
-              ),
+              leading: const Icon(Icons.view_module, color: Color(0xffC5A46D)),
 
               title: Text(
                 'Slab ${slab.itemCode}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
 
               subtitle: Text(
@@ -329,20 +319,11 @@ void initState() {
               childrenPadding: const EdgeInsets.all(16),
 
               children: [
-                _infoRow(
-                  'Item Code',
-                  slab.itemCode,
-                ),
+                _infoRow('Item Code', slab.itemCode),
 
-                _infoRow(
-                  'Dimensions',
-                  '${slab.x} × ${slab.y} × ${slab.z}',
-                ),
+                _infoRow('Dimensions', '${slab.x} × ${slab.y} × ${slab.z}'),
 
-                _infoRow(
-                  'Unit',
-                  slab.unitName ?? '-',
-                ),
+                _infoRow('Unit', slab.unitName ?? '-'),
 
                 const Divider(),
 
@@ -350,10 +331,7 @@ void initState() {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Warehouse Balances',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
 
@@ -362,13 +340,8 @@ void initState() {
                 ...slab.balances.map(
                   (balance) => ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(
-                      Icons.warehouse_outlined,
-                      size: 20,
-                    ),
-                    title: Text(
-                      balance.warehouseName ?? 'Warehouse',
-                    ),
+                    leading: const Icon(Icons.warehouse_outlined, size: 20),
+                    title: Text(balance.warehouseName ?? 'Warehouse'),
                     trailing: Text(
                       '${balance.balance}',
                       style: TextStyle(
@@ -387,11 +360,7 @@ void initState() {
   }
 
   // صف موحد لعرض اسم الحقل والقيمة
-  Widget _infoRow(
-    String title,
-    String value, {
-    Color? valueColor,
-  }) {
+  Widget _infoRow(String title, String value, {Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
@@ -400,9 +369,7 @@ void initState() {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
 
@@ -412,10 +379,7 @@ void initState() {
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: valueColor,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, color: valueColor),
             ),
           ),
         ],
