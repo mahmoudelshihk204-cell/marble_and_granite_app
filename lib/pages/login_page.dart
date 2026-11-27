@@ -4,6 +4,7 @@ import 'package:marble_and_granite/Widgets/custom_bottom.dart';
 import 'package:marble_and_granite/Widgets/custom_text_feild.dart';
 import 'package:marble_and_granite/Widgets/saved_bottom.dart';
 import 'package:marble_and_granite/pages/home_page.dart';
+import 'package:marble_and_granite/pages/offline_mode_page.dart';
 import 'package:marble_and_granite/services/login_storage_service.dart';
 import 'package:marble_and_granite/services/backend_api_client.dart';
 
@@ -287,6 +288,14 @@ class _LoginPageState extends State<LoginPage> {
                     bottonName: 'Offline Mode',
                     containerColor: const Color.fromARGB(255, 96, 96, 96),
                     fontColor: Colors.white,
+                    ontap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const OfflineModePage(),
+                        ),
+                      );
+                    },
                   ),
 
                   SizedBox(height: 15),
