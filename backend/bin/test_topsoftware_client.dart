@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+
 import 'package:backend/services/topsoftware_api_client.dart';
 
 Future<void> main(List<String> args) async {
@@ -11,56 +13,42 @@ Future<void> main(List<String> args) async {
   final barcode = args.isNotEmpty ? args[0] : '2311';
 
   if (username.isEmpty || password.isEmpty || schema.isEmpty) {
-    print('Error: Missing Environment Variables.');
+    print('Error: Missing connection configuration.');
     return;
   }
 
-  
-final client = TopSoftwareApiClient(
-  // مؤقتًا هنستخدم العنوان اللي اختبرناه قبل كده.
-  // بعد كده هنستبدله بالـ BaseURL المستخرج من Token.
-  baseUrl: 'http://topsoftware.ddns.net:8086',
-
-  username: username,
-  password: password,
-  schema: schema,
-);
-
+  final client = TopSoftwareApiClient(
+    baseUrl: 'http://topsoftware.ddns.net:8086',
+    username: username,
+    password: password,
+    schema: schema,
+  );
 
   try {
-    print('Searching for barcode: $barcode');
+    print('Starting barcode search test...');
 
     final item = await client.searchByBarcode(barcode);
 
-    print('\n========== ITEM INFORMATION ==========');
-    print('Item Code: ${item['itemCode']}');
-    print('Item Name: ${item['itemName']}');
-    print('Block Number: ${item['blockNumber']}');
-    print('Price: ${item['price']}');
-    print('Unit: ${item['unit']}');
-    print('Total Over Block: ${item['totalOverBlock']}');
-    print('Total Over Company: ${item['totalOverCompany']}');
+    print('========== SEARCH RESULT ==========');
+    print('Barcode search: Successful');
+    print('Item data received: ${item.isNotEmpty}');
 
     final warehouses = item['table'];
 
     if (warehouses is List) {
-      print('\n========== WAREHOUSES ==========');
-
-      for (final warehouse in warehouses) {
-        if (warehouse is Map<String, dynamic>) {
-          print('Warehouse: ${warehouse['brandName']}');
-          print('Amount: ${warehouse['amount']}');
-          print('Number: ${warehouse['number']}');
-          print('------------------------------');
-        }
-      }
+      print('Warehouse records received: ${warehouses.length}');
+    } else {
+      print('Warehouse records: Not available');
     }
 
-    print('\nService test completed successfully!');
-  } catch (e) {
-    print('Error: $e');
+    print('Service test completed successfully.');
+    print('===================================');
+  } on TimeoutException {
+    print('Request timed out.');
+  } catch (_) {
+    print('Barcode search test failed.');
+    print('Check connection configuration and server availability.');
   } finally {
     client.close();
   }
 }
-

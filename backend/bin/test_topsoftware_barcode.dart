@@ -1,20 +1,20 @@
-
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 
 Future<void> main() async {
-  // عنوان الـ API الخاص بالبرنامج الأصلي
+  // عنوان API الخاص بـ TopSoftware.
   const String baseUrl = 'http://topsoftware.ddns.net:8086/api/v1/topsoftware';
 
-  // بيانات المستخدم من آخر Login ناجح
+  // بيانات جلسة الاختبار.
   const String schema = 'exp2013';
   const String loginCount = '36';
   const String employeeNo = '11';
 
-  // الباركود اللي هنختبره
+  // الباركود المستخدم في الاختبار.
   const String barcode = '2311';
 
-  // بناء الرابط وإضافة الـ Parameters
+  // بناء الرابط وإضافة Parameters.
   final Uri url = Uri.parse('$baseUrl/barcode').replace(
     queryParameters: {
       'schema': schema,
@@ -25,39 +25,37 @@ Future<void> main() async {
   );
 
   print('Sending barcode request...');
-  print('URL: $url');
 
   try {
-    // إرسال GET Request للسيرفر
-    final response = await http.get(
-      url,
-      headers: {
-        'Accept': 'application/json',
-      },
-    ).timeout(const Duration(seconds: 20));
+    final response = await http
+        .get(url, headers: {'Accept': 'application/json'})
+        .timeout(const Duration(seconds: 20));
 
-    print('\n========== RESPONSE ==========');
+    print('========== RESPONSE ==========');
     print('Status Code: ${response.statusCode}');
 
-    // تحويل الرد من JSON إلى Dart Object
-    final Map<String, dynamic> responseData =
-        jsonDecode(response.body);
+    // التأكد من أن الاستجابة JSON سليمة.
+    final dynamic responseData = jsonDecode(response.body);
 
-    // طباعة الـ JSON بشكل منظم
-    const JsonEncoder encoder = JsonEncoder.withIndent('  ');
-    print('Response Body:');
-    print(encoder.convert(responseData));
+    if (responseData is! Map) {
+      print('Response format: Invalid');
+      return;
+    }
 
-    print('===========================\n');
+    print('Response format: Valid JSON');
 
-    // التأكد من نجاح الطلب
     if (response.statusCode == 200) {
-      print('Barcode request completed successfully!');
+      print('Barcode request completed successfully.');
     } else {
       print('Barcode request failed.');
     }
-  } catch (e) {
-    // لو حصل خطأ اتصال أو Timeout أو JSON Parsing
-    print('Request Error: $e');
+
+    print('==============================');
+  } on TimeoutException {
+    print('Request timed out.');
+  } on FormatException {
+    print('Server returned invalid JSON.');
+  } catch (_) {
+    print('Barcode request failed due to a connection error.');
   }
 }

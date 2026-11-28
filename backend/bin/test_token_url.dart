@@ -1,10 +1,9 @@
-
 import 'dart:io';
 
 import 'package:backend/services/token_service.dart';
 
 void main() {
-  // قراءة الـ Token من Environment Variable
+  // قراءة الـ Token من Environment Variable.
   final token = Platform.environment['TOPSOFTWARE_TOKEN'] ?? '';
 
   if (token.isEmpty) {
@@ -13,32 +12,27 @@ void main() {
   }
 
   try {
-    // استخراج اسم الـ Schema
-    final schema = TokenService.extractSchema(token);
-
-    // فك تشفير الـ Base URL
+    // اختبار استخراج وفك تشفير بيانات الـ Token.
+    TokenService.extractSchema(token);
     final baseUrl = TokenService.decryptBaseUrl(token);
 
-    print('========== TOKEN TEST ==========');
-    print('Schema: $schema');
-
-    // نعرض شكل الرابط فقط من غير كشف الدومين أو عنوان السيرفر.
     final uri = Uri.parse(baseUrl);
 
+    print('========== TOKEN TEST ==========');
+    print('Token validation: Successful');
     print('URL Scheme: ${uri.scheme}');
     print('Has Host: ${uri.hasAuthority}');
     print('Port: ${uri.hasPort ? uri.port : "Default"}');
-    print('Path: ${uri.path}');
 
     if (uri.path.endsWith('/api/v1/topsoftware')) {
-      print('Result: Base URL includes API path.');
+      print('API Path: Valid');
     } else {
-      print('Result: Base URL is server root.');
+      print('API Path: Server root');
     }
 
     print('================================');
-  } catch (e) {
-    print('Token Error: $e');
+  } catch (_) {
+    print('Token validation: Failed');
+    print('Check the token configuration.');
   }
 }
-

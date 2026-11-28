@@ -1,4 +1,4 @@
-
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -19,15 +19,15 @@ class TopSoftwareApiClient {
     required this.password,
     required this.schema,
     http.Client? client,
-  })  : _baseUrl = _normalizeBaseUrl(baseUrl),
-        _client = client ?? http.Client();
+  }) : _baseUrl = _normalizeBaseUrl(baseUrl),
+       _client = client ?? http.Client();
+
   // توحيد عنوان السيرفر ومنع تكرار مسار API.
   static String _normalizeBaseUrl(String value) {
     var url = value.trim();
 
     // إضافة البروتوكول لو مش موجود.
-    if (!url.startsWith('http://') &&
-        !url.startsWith('https://')) {
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = 'http://$url';
     }
 
@@ -45,17 +45,10 @@ class TopSoftwareApiClient {
 
     return '$url$apiPath';
   }
-  
-Future<TopSoftwareSession> login() async {
-  final uri = Uri.parse('$_baseUrl/login');
 
-  // تسجيل وقت بداية محاولة الاتصال.
-  final stopwatch = Stopwatch()..start();
-
-  try {
-    print('========== TOPSOFTWARE LOGIN ==========');
-    print('LOGIN URL: $uri');
-    print('LOGIN STARTED');
+  // تسجيل الدخول والحصول على بيانات الجلسة.
+  Future<TopSoftwareSession> login() async {
+    final uri = Uri.parse('$_baseUrl/login');
 
     final response = await _client
         .post(
@@ -71,17 +64,13 @@ Future<TopSoftwareSession> login() async {
             'schema': schema,
           }),
         )
-        .timeout(const Duration(seconds: 60));
+        .timeout(const Duration(seconds: 30));
 
-    print('LOGIN RESPONSE RECEIVED');
-    print('LOGIN STATUS: ${response.statusCode}');
-    print('LOGIN TIME: ${stopwatch.elapsed}');
-    
     final json = _decodeResponse(response);
 
     if (response.statusCode != 200 || json['statusCode'] != 200) {
       throw TopSoftwareApiException(
-        'Login failed: ${json['message'] ?? response.body}',
+        'TopSoftware login failed. Status: ${response.statusCode}',
       );
     }
 
@@ -101,27 +90,11 @@ Future<TopSoftwareSession> login() async {
     final employeeNo = metaData['employeeNumber']?.toString() ?? '';
 
     if (loginCount.isEmpty || employeeNo.isEmpty) {
-      throw TopSoftwareApiException(
-        'Session information is incomplete.',
-      );
+      throw TopSoftwareApiException('Session information is incomplete.');
     }
 
-    print('LOGIN SUCCESS');
-    
-    return TopSoftwareSession(
-      loginCount: loginCount,
-      employeeNo: employeeNo,
-    );
-  } catch (error) {
-    print('LOGIN FAILED: $error');
-    print('LOGIN ELAPSED: ${stopwatch.elapsed}');
-    rethrow;
-  } finally {
-    stopwatch.stop();
-    print('======================================');
+    return TopSoftwareSession(loginCount: loginCount, employeeNo: employeeNo);
   }
-}
-
 
   // البحث بالباركود بعد تسجيل الدخول.
   Future<Map<String, dynamic>> searchByBarcode(String barcode) async {
@@ -141,17 +114,14 @@ Future<TopSoftwareSession> login() async {
     );
 
     final response = await _client
-        .get(
-          uri,
-          headers: {'Accept': 'application/json'},
-        )
+        .get(uri, headers: {'Accept': 'application/json'})
         .timeout(const Duration(seconds: 30));
 
     final json = _decodeResponse(response);
 
     if (response.statusCode != 200 || json['statusCode'] != 200) {
       throw TopSoftwareApiException(
-        'Barcode search failed: ${json['message'] ?? response.body}',
+        'Barcode search failed. Status: ${response.statusCode}',
       );
     }
 
@@ -166,80 +136,68 @@ Future<TopSoftwareSession> login() async {
     if (item is! Map) {
       throw TopSoftwareApiException('Item metadata is missing.');
     }
-print('BARCODE STATUS: ${response.statusCode}');
-print('BARCODE RESPONSE: ${response.body}');
+
     // الاحتفاظ بكل الحقول الراجعة من API.
     return Map<String, dynamic>.from(item);
-    
   }
-
-
-
 
   // البحث عن كل سجلات البلوك من TopSoftware API.
-Future<List<Map<String, dynamic>>> searchBlockStat(
-  String blockNumber,
-) async {
-  if (blockNumber.trim().isEmpty) {
-    throw ArgumentError('Block number cannot be empty.');
-  }
+  Future<List<Map<String, dynamic>>> searchBlockStat(String blockNumber) async {
+    if (blockNumber.trim().isEmpty) {
+      throw ArgumentError('Block number cannot be empty.');
+    }
 
-  // تسجيل الدخول للحصول على بيانات الجلسة.
-  final session = await login();
+    // تسجيل الدخول للحصول على بيانات الجلسة.
+    final session = await login();
 
-  final uri = Uri.parse('$_baseUrl/blockstat').replace(
-    queryParameters: {
-      'schema': schema,
-      'blocknumber': blockNumber.trim(),
-      'loginCount': session.loginCount,
-      'employeeNo': session.employeeNo,
-    },
-  );
-
-  final response = await _client
-      .get(
-        uri,
-        headers: {'Accept': 'application/json'},
-      )
-      .timeout(const Duration(seconds: 30));
-
-  final json = _decodeResponse(response);
-
-  if (response.statusCode != 200 || json['statusCode'] != 200) {
-    throw TopSoftwareApiException(
-      'Block stat request failed: ${json['message'] ?? response.body}',
+    final uri = Uri.parse('$_baseUrl/blockstat').replace(
+      queryParameters: {
+        'schema': schema,
+        'blocknumber': blockNumber.trim(),
+        'loginCount': session.loginCount,
+        'employeeNo': session.employeeNo,
+      },
     );
-  }
 
-  final data = json['data'];
+    final response = await _client
+        .get(uri, headers: {'Accept': 'application/json'})
+        .timeout(const Duration(seconds: 30));
 
-  if (data is! Map) {
-    throw TopSoftwareApiException('Block stat data is missing.');
-  }
+    final json = _decodeResponse(response);
 
-  final metadata = data['metaData'];
-
-  if (metadata is! List) {
-    throw TopSoftwareApiException(
-      'Block stat metadata is missing or invalid.',
-    );
-  }
-
-  // إنشاء قائمة بالنوع الصحيح، مع التأكد من سلامة كل سجل.
-  final records = <Map<String, dynamic>>[];
-
-  for (final row in metadata) {
-    if (row is! Map) {
+    if (response.statusCode != 200 || json['statusCode'] != 200) {
       throw TopSoftwareApiException(
-        'Block stat contains an invalid record.',
+        'Block stat request failed. Status: ${response.statusCode}',
       );
     }
 
-    records.add(Map<String, dynamic>.from(row));
-  }
+    final data = json['data'];
 
-  return records;
-}
+    if (data is! Map) {
+      throw TopSoftwareApiException('Block stat data is missing.');
+    }
+
+    final metadata = data['metaData'];
+
+    if (metadata is! List) {
+      throw TopSoftwareApiException(
+        'Block stat metadata is missing or invalid.',
+      );
+    }
+
+    // إنشاء قائمة بالنوع الصحيح، مع التأكد من سلامة كل سجل.
+    final records = <Map<String, dynamic>>[];
+
+    for (final row in metadata) {
+      if (row is! Map) {
+        throw TopSoftwareApiException('Block stat contains an invalid record.');
+      }
+
+      records.add(Map<String, dynamic>.from(row));
+    }
+
+    return records;
+  }
 
   // تحويل استجابة السيرفر إلى JSON والتأكد من سلامتها.
   Map<String, dynamic> _decodeResponse(http.Response response) {
@@ -248,15 +206,11 @@ Future<List<Map<String, dynamic>>> searchBlockStat(
     try {
       decoded = jsonDecode(response.body);
     } on FormatException {
-      throw TopSoftwareApiException(
-        'Server returned invalid JSON.',
-      );
+      throw TopSoftwareApiException('Server returned invalid JSON.');
     }
 
     if (decoded is! Map) {
-      throw TopSoftwareApiException(
-        'Unexpected server response format.',
-      );
+      throw TopSoftwareApiException('Unexpected server response format.');
     }
 
     return Map<String, dynamic>.from(decoded);

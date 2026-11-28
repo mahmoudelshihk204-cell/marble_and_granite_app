@@ -1,5 +1,6 @@
-
+import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
@@ -7,7 +8,45 @@ import 'package:shelf_router/shelf_router.dart';
 import 'package:backend/services/token_service.dart';
 import 'package:backend/services/topsoftware_api_client.dart';
 
+typedef TopSoftwareClientFactory =
+    TopSoftwareApiClient Function({
+      required String username,
+      required String password,
+      required String token,
+    });
+
 class TopSoftwareAuthApi {
+  TopSoftwareAuthApi({this._clientFactory});
+
+  final TopSoftwareClientFactory? _clientFactory;
+
+  static const int _maxRequestBodyBytes = 64 * 1024;
+
+  // قراءة الطلب مع تحديد أقصى حجم مسموح.
+  Future<String> _readRequestBody(Request request) async {
+    final contentLength = request.headers['content-length'];
+
+    if (contentLength != null) {
+      final length = int.tryParse(contentLength);
+
+      if (length != null && length > _maxRequestBodyBytes) {
+        throw const RequestBodyTooLargeException();
+      }
+    }
+
+    final builder = BytesBuilder(copy: false);
+
+    await for (final chunk in request.read()) {
+      if (builder.length + chunk.length > _maxRequestBodyBytes) {
+        throw const RequestBodyTooLargeException();
+      }
+
+      builder.add(chunk);
+    }
+
+    return utf8.decode(builder.takeBytes());
+  }
+
   // توحيد شكل استجابة JSON ودعم اللغة العربية.
   Response _jsonResponse(int statusCode, Map<String, dynamic> data) {
     return Response(
@@ -23,16 +62,17 @@ class TopSoftwareAuthApi {
     required String password,
     required String token,
   }) {
-    // استخراج اسم الـ Schema من أول وآخر حرف في Token.
+    if (_clientFactory != null) {
+      return _clientFactory(
+        username: username.trim(),
+        password: password,
+        token: token,
+      );
+    }
+
     final schema = TokenService.extractSchema(token);
-
-    // فك تشفير الجزء الأوسط واستخراج BaseURL.
     final baseUrl = TokenService.decryptBaseUrl(token);
-// طباعة عنوان السيرفر بعد فك التشفير للتأكد من صحته.
-print('TOPSOFTWARE BASE URL: $baseUrl');
 
-// طباعة اسم الـ Schema فقط.
-print('TOPSOFTWARE SCHEMA: $schema');
     return TopSoftwareApiClient(
       baseUrl: baseUrl,
       username: username.trim(),
@@ -43,7 +83,7 @@ print('TOPSOFTWARE SCHEMA: $schema');
 
   // قراءة والتحقق من بيانات المستخدم القادمة في JSON.
   Future<Map<String, String>?> _readUserData(Request request) async {
-    final body = await request.readAsString();
+    final body = await _readRequestBody(request);
     final dynamic decoded = jsonDecode(body);
 
     if (decoded is! Map) {
@@ -95,15 +135,22 @@ print('TOPSOFTWARE SCHEMA: $schema');
           token: userData['token']!,
         );
 
-        // تنفيذ تسجيل الدخول على TopSoftware الأصلي.
         final session = await client.login();
 
         return _jsonResponse(200, {
           'success': true,
           'message': 'Login successful',
-          'data': {
-            'employeeNumber': session.employeeNo,
-          },
+          'data': {'employeeNumber': session.employeeNo},
+        });
+      } on TimeoutException {
+        return _jsonResponse(504, {
+          'success': false,
+          'message': 'TopSoftware server timed out. Please try again later.',
+        });
+      } on RequestBodyTooLargeException {
+        return _jsonResponse(413, {
+          'success': false,
+          'message': 'Request body is too large',
         });
       } on FormatException {
         return _jsonResponse(400, {
@@ -111,9 +158,7 @@ print('TOPSOFTWARE SCHEMA: $schema');
           'message': 'Invalid JSON or token format',
         });
       } on TopSoftwareApiException catch (error) {
-        print('TopSoftware login error: $error');
-
-        if (error.message.startsWith('Login failed:')) {
+        if (error.message.startsWith('TopSoftware login failed.')) {
           return _jsonResponse(401, {
             'success': false,
             'message': 'Invalid username or password',
@@ -124,10 +169,7 @@ print('TOPSOFTWARE SCHEMA: $schema');
           'success': false,
           'message': 'TopSoftware login service error',
         });
-      } catch (error, stackTrace) {
-        print('LOGIN ERROR: $error');
-        print(stackTrace);
-
+      } catch (_) {
         return _jsonResponse(500, {
           'success': false,
           'message': 'Internal server error',
@@ -142,11 +184,9 @@ print('TOPSOFTWARE SCHEMA: $schema');
     // ==========================================
     router.post('/api/items/search/barcode', (Request request) async {
       TopSoftwareApiClient? client;
-      
 
       try {
-        // قراءة بيانات الطلب مرة واحدة.
-        final requestBody = await request.readAsString();
+        final requestBody = await _readRequestBody(request);
         final dynamic body = jsonDecode(requestBody);
 
         if (body is! Map) {
@@ -160,10 +200,7 @@ print('TOPSOFTWARE SCHEMA: $schema');
         final password = body['password'];
         final token = body['token'];
         final barcode = body['barcode'];
-        print('========== BACKEND BARCODE SEARCH ==========');
-print('RECEIVED ITEM CODE: ${barcode.trim()}');
 
-        // التحقق من بيانات الدخول والباركود.
         if (username is! String ||
             password is! String ||
             token is! String ||
@@ -174,26 +211,32 @@ print('RECEIVED ITEM CODE: ${barcode.trim()}');
             barcode.trim().isEmpty) {
           return _jsonResponse(400, {
             'success': false,
-            'message':
-                'Username, password, token and barcode are required',
+            'message': 'Username, password, token and barcode are required',
           });
         }
 
-        // إنشاء Client خاص بالمستخدم.
         client = _createClient(
           username: username,
           password: password,
           token: token,
         );
 
-        // البحث على سيرفر TopSoftware الأصلي.
-        // الدالة بتعمل Login وتحصل على Session ثم تبحث بالباركود.
         final item = await client.searchByBarcode(barcode);
 
         return _jsonResponse(200, {
           'success': true,
           'message': 'Item found successfully',
           'data': item,
+        });
+      } on TimeoutException {
+        return _jsonResponse(504, {
+          'success': false,
+          'message': 'TopSoftware server timed out. Please try again later.',
+        });
+      } on RequestBodyTooLargeException {
+        return _jsonResponse(413, {
+          'success': false,
+          'message': 'Request body is too large',
         });
       } on FormatException {
         return _jsonResponse(400, {
@@ -205,17 +248,12 @@ print('RECEIVED ITEM CODE: ${barcode.trim()}');
           'success': false,
           'message': 'Invalid barcode',
         });
-      } on TopSoftwareApiException catch (error) {
-        print('TopSoftware barcode error: $error');
-
+      } on TopSoftwareApiException {
         return _jsonResponse(502, {
           'success': false,
           'message': 'Barcode search service error',
         });
-      } catch (error, stackTrace) {
-        print('BARCODE SEARCH ERROR: $error');
-        print(stackTrace);
-
+      } catch (_) {
         return _jsonResponse(500, {
           'success': false,
           'message': 'Internal server error',
@@ -232,8 +270,7 @@ print('RECEIVED ITEM CODE: ${barcode.trim()}');
       TopSoftwareApiClient? client;
 
       try {
-        // قراءة بيانات الطلب.
-        final requestBody = await request.readAsString();
+        final requestBody = await _readRequestBody(request);
         final dynamic body = jsonDecode(requestBody);
 
         if (body is! Map) {
@@ -248,7 +285,6 @@ print('RECEIVED ITEM CODE: ${barcode.trim()}');
         final token = body['token'];
         final blockNumber = body['blockNumber'];
 
-        // التأكد من وجود كل البيانات المطلوبة.
         if (username is! String ||
             password is! String ||
             token is! String ||
@@ -259,28 +295,32 @@ print('RECEIVED ITEM CODE: ${barcode.trim()}');
             blockNumber.trim().isEmpty) {
           return _jsonResponse(400, {
             'success': false,
-            'message':
-                'Username, password, token and blockNumber are required',
+            'message': 'Username, password, token and blockNumber are required',
           });
         }
 
-        // إنشاء Client خاص بالمستخدم.
         client = _createClient(
           username: username,
           password: password,
           token: token,
         );
 
-        // البحث عن البلوك في TopSoftware.
-        // الدالة بتعمل Login ثم تستدعي blockstat.
-        final blockData = await client.searchBlockStat(
-          blockNumber.trim(),
-        );
+        final blockData = await client.searchBlockStat(blockNumber.trim());
 
         return _jsonResponse(200, {
           'success': true,
           'message': 'Block data retrieved successfully',
           'data': blockData,
+        });
+      } on TimeoutException {
+        return _jsonResponse(504, {
+          'success': false,
+          'message': 'TopSoftware server timed out. Please try again later.',
+        });
+      } on RequestBodyTooLargeException {
+        return _jsonResponse(413, {
+          'success': false,
+          'message': 'Request body is too large',
         });
       } on FormatException {
         return _jsonResponse(400, {
@@ -292,17 +332,12 @@ print('RECEIVED ITEM CODE: ${barcode.trim()}');
           'success': false,
           'message': 'Invalid block number',
         });
-      } on TopSoftwareApiException catch (error) {
-        print('TopSoftware block stat error: $error');
-
+      } on TopSoftwareApiException {
         return _jsonResponse(502, {
           'success': false,
           'message': 'Block search service error',
         });
-      } catch (error, stackTrace) {
-        print('BLOCK SEARCH ERROR: $error');
-        print(stackTrace);
-
+      } catch (_) {
         return _jsonResponse(500, {
           'success': false,
           'message': 'Internal server error',
@@ -314,4 +349,8 @@ print('RECEIVED ITEM CODE: ${barcode.trim()}');
 
     return router;
   }
+}
+
+class RequestBodyTooLargeException implements Exception {
+  const RequestBodyTooLargeException();
 }

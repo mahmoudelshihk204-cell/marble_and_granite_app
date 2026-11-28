@@ -1,42 +1,36 @@
-
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
 Future<void> main() async {
-  // بيانات الاتصال بالـ API الأصلي
+  // عنوان API الخاص بـ TopSoftware.
   const String baseUrl = 'http://topsoftware.ddns.net:8086';
   const String endpoint = '/api/v1/topsoftware/login';
 
-  // بنقرأ بيانات تسجيل الدخول من Environment Variables
-  // علشان ما نحطش بيانات الدخول داخل الكود
+  // قراءة بيانات الدخول من Environment Variables.
   final String username = Platform.environment['TOPSOFTWARE_USERNAME'] ?? '';
   final String password = Platform.environment['TOPSOFTWARE_PASSWORD'] ?? '';
   final String schema = Platform.environment['TOPSOFTWARE_SCHEMA'] ?? '';
 
-  // التأكد إن البيانات موجودة
+  // التأكد من وجود بيانات الاتصال.
   if (username.isEmpty || password.isEmpty || schema.isEmpty) {
-    print('Error: Login credentials are missing!');
-    print('Set TOPSOFTWARE_USERNAME, TOPSOFTWARE_PASSWORD and TOPSOFTWARE_SCHEMA');
+    print('Error: Login configuration is missing.');
     return;
   }
 
-  // تجهيز عنوان الـ Request
   final Uri url = Uri.parse('$baseUrl$endpoint');
 
-  // تجهيز البيانات اللي هتتبعت في الـ Body
   final Map<String, dynamic> requestBody = {
     'username': username,
     'password': password,
     'schema': schema,
   };
 
-  print('Sending login request...');
-  print('URL: $url');
+  print('Starting TopSoftware login test...');
 
   try {
-    // إرسال POST Request واستقبال الرد
     final response = await http
         .post(
           url,
@@ -48,13 +42,28 @@ Future<void> main() async {
         )
         .timeout(const Duration(seconds: 30));
 
-    print('\n========== RESPONSE ==========');
-    print('Status Code: ${response.statusCode}');
-    print('Response Body:');
-    print(response.body);
-    print('===========================');
-  } catch (e) {
-    // التعامل مع مشاكل الاتصال أو انتهاء الوقت
-    print('Request failed: $e');
+    print('HTTP Status: ${response.statusCode}');
+
+    // التأكد من سلامة استجابة JSON دون عرض محتواها.
+    final dynamic decoded = jsonDecode(response.body);
+
+    if (decoded is! Map) {
+      print('Response format: Invalid');
+      return;
+    }
+
+    if (response.statusCode == 200 && decoded['statusCode'] == 200) {
+      print('TopSoftware login test: Successful');
+    } else {
+      print('TopSoftware login test: Failed');
+    }
+  } on TimeoutException {
+    print('Login request timed out.');
+  } on SocketException {
+    print('Connection to TopSoftware failed.');
+  } on FormatException {
+    print('Server returned invalid JSON.');
+  } catch (_) {
+    print('Login test failed due to an unexpected error.');
   }
 }

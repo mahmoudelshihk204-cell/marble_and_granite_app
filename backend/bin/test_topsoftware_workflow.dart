@@ -1,40 +1,27 @@
-
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
 Future<void> main(List<String> args) async {
-  // عنوان الـ API الأصلي
-  const String baseUrl =
-      'http://topsoftware.ddns.net:8086/api/v1/topsoftware';
+  const String baseUrl = 'http://topsoftware.ddns.net:8086/api/v1/topsoftware';
 
-  // قراءة بيانات الدخول من Environment Variables
-  final String username =
-      Platform.environment['TOPSOFTWARE_USERNAME'] ?? '';
-  final String password =
-      Platform.environment['TOPSOFTWARE_PASSWORD'] ?? '';
-  final String schema =
-      Platform.environment['TOPSOFTWARE_SCHEMA'] ?? '';
+  final String username = Platform.environment['TOPSOFTWARE_USERNAME'] ?? '';
+  final String password = Platform.environment['TOPSOFTWARE_PASSWORD'] ?? '';
+  final String schema = Platform.environment['TOPSOFTWARE_SCHEMA'] ?? '';
 
-  // الباركود: نقدر نبعته وقت تشغيل البرنامج
-  // ولو مبعتناش حاجة هيستخدم 2311 للاختبار
   final String barcode = args.isNotEmpty ? args[0] : '2311';
 
-  // التأكد إن بيانات الدخول موجودة
   if (username.isEmpty || password.isEmpty || schema.isEmpty) {
-    print('Error: Login credentials are missing!');
-    print('Check your Environment Variables.');
+    print('Error: Login configuration is missing.');
     return;
   }
 
+  print('Starting TopSoftware workflow test...');
+
   try {
-    // ==========================================
     // STEP 1: LOGIN
-    // ==========================================
-
-    print('\n========== STEP 1: LOGIN ==========');
-
     final Uri loginUrl = Uri.parse('$baseUrl/login');
 
     final loginResponse = await http
@@ -52,59 +39,42 @@ Future<void> main(List<String> args) async {
         )
         .timeout(const Duration(seconds: 30));
 
-    print('Login HTTP Status: ${loginResponse.statusCode}');
+    if (loginResponse.statusCode != 200) {
+      print('Login failed. HTTP status: ${loginResponse.statusCode}');
+      return;
+    }
 
-    // تحويل رد السيرفر من JSON إلى Map
     final dynamic decodedLogin = jsonDecode(loginResponse.body);
 
-    if (decodedLogin is! Map<String, dynamic>) {
-      print('Error: Unexpected login response format.');
-      return;
-    }
-
-    // لازم يكون طلب تسجيل الدخول ناجح
-    if (loginResponse.statusCode != 200 ||
+    if (decodedLogin is! Map<String, dynamic> ||
         decodedLogin['statusCode'] != 200) {
-      print('Login failed!');
-      print(loginResponse.body);
+      print('Login failed. Invalid server response.');
       return;
     }
 
-    // استخراج بيانات الجلسة من رد تسجيل الدخول
     final loginData = decodedLogin['data'];
     if (loginData is! Map<String, dynamic>) {
-      print('Error: Login data is missing.');
+      print('Login failed. Session data is missing.');
       return;
     }
 
     final metaData = loginData['metaData'];
     if (metaData is! Map<String, dynamic>) {
-      print('Error: Login metadata is missing.');
+      print('Login failed. Session metadata is missing.');
       return;
     }
 
-    final String loginCount =
-        metaData['loginCount']?.toString() ?? '';
-    final String employeeNo =
-        metaData['employeeNumber']?.toString() ?? '';
+    final String loginCount = metaData['loginCount']?.toString() ?? '';
+    final String employeeNo = metaData['employeeNumber']?.toString() ?? '';
 
     if (loginCount.isEmpty || employeeNo.isEmpty) {
-      print('Error: Session information is incomplete.');
+      print('Login failed. Session information is incomplete.');
       return;
     }
 
-    print('Login successful!');
-    print('Employee Number: $employeeNo');
-    print('Login Count: $loginCount');
+    print('Login successful.');
 
-    // ==========================================
     // STEP 2: BARCODE SEARCH
-    // ==========================================
-
-    print('\n========== STEP 2: BARCODE SEARCH ==========');
-    print('Searching for barcode: $barcode');
-
-    // تجهيز رابط البحث مع بيانات الجلسة الجديدة
     final Uri barcodeUrl = Uri.parse('$baseUrl/barcode').replace(
       queryParameters: {
         'schema': schema,
@@ -115,78 +85,51 @@ Future<void> main(List<String> args) async {
     );
 
     final barcodeResponse = await http
-        .get(
-          barcodeUrl,
-          headers: {
-            'Accept': 'application/json',
-          },
-        )
+        .get(barcodeUrl, headers: {'Accept': 'application/json'})
         .timeout(const Duration(seconds: 30));
 
-    print('Barcode HTTP Status: ${barcodeResponse.statusCode}');
+    if (barcodeResponse.statusCode != 200) {
+      print(
+        'Barcode search failed. HTTP status: '
+        '${barcodeResponse.statusCode}',
+      );
+      return;
+    }
 
-    // تحويل رد البحث إلى JSON
     final dynamic decodedBarcode = jsonDecode(barcodeResponse.body);
 
-    if (decodedBarcode is! Map<String, dynamic>) {
-      print('Error: Unexpected barcode response format.');
-      return;
-    }
-
-    // التأكد من نجاح البحث
-    if (barcodeResponse.statusCode != 200 ||
+    if (decodedBarcode is! Map<String, dynamic> ||
         decodedBarcode['statusCode'] != 200) {
-      print('Barcode search failed!');
-      print(barcodeResponse.body);
+      print('Barcode search failed. Invalid server response.');
       return;
     }
 
-    // استخراج بيانات الصنف
     final barcodeData = decodedBarcode['data'];
     if (barcodeData is! Map<String, dynamic>) {
-      print('Error: Barcode data is missing.');
+      print('Barcode search failed. Item data is missing.');
       return;
     }
 
     final item = barcodeData['metaData'];
     if (item is! Map<String, dynamic>) {
-      print('Error: Item metadata is missing.');
+      print('Barcode search failed. Item metadata is missing.');
       return;
     }
 
-    // عرض أهم بيانات الصنف
-    print('\n========== ITEM INFORMATION ==========');
-    print('Item Code: ${item['itemCode']}');
-    print('Item Name: ${item['itemName']}');
-    print('Block Number: ${item['blockNumber']}');
-    print('Price: ${item['price']}');
-    print('Unit: ${item['unit']}');
-    print('Total Over Block: ${item['totalOverBlock']}');
-    print('Total Over Company: ${item['totalOverCompany']}');
-
-    // عرض أرصدة المخازن
     final warehouses = item['table'];
+    final int warehouseCount = warehouses is List ? warehouses.length : 0;
 
-    if (warehouses is List) {
-      print('\n========== WAREHOUSE INFORMATION ==========');
-
-      for (final warehouse in warehouses) {
-        if (warehouse is Map<String, dynamic>) {
-          print('Warehouse: ${warehouse['brandName']}');
-          print('Amount: ${warehouse['amount']}');
-          print('Number: ${warehouse['number']}');
-          print('-----------------------------------');
-        }
-      }
-    }
-
-    print('\nWorkflow completed successfully!');
-
-  } on FormatException catch (e) {
-    print('JSON Parsing Error: $e');
-  } on SocketException catch (e) {
-    print('Connection Error: $e');
-  } catch (e) {
-    print('Unexpected Error: $e');
+    print('Barcode search successful.');
+    print('Item data received: Yes');
+    print('Warehouse records received: $warehouseCount');
+    print('Workflow completed successfully.');
+  } on TimeoutException {
+    print('Request timed out.');
+  } on SocketException {
+    print('Connection to TopSoftware failed.');
+  } on FormatException {
+    print('Server returned invalid JSON.');
+  } catch (_) {
+    print('Workflow failed due to an unexpected error.');
   }
 }
