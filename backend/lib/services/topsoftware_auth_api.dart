@@ -169,7 +169,11 @@ class TopSoftwareAuthApi {
           'success': false,
           'message': 'TopSoftware login service error',
         });
-      } catch (_) {
+      } catch (error, stackTrace) {
+        print('LOGIN ERROR: $error');
+        print('LOGIN STACK TRACE:');
+        print(stackTrace);
+
         return _jsonResponse(500, {
           'success': false,
           'message': 'Internal server error',

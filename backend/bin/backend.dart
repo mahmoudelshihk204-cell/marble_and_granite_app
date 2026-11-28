@@ -1,17 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:backend/services/topsoftware_auth_api.dart';
 
-// الحد الأقصى للطلبات من نفس عنوان IP.
 const int _maxRequests = 60;
 const int _maxTrackedIps = 10000;
-
-// مدة احتساب الطلبات.
 const Duration _rateLimitWindow = Duration(minutes: 1);
 
-// تخزين عدد الطلبات ووقت بداية الفترة لكل IP.
 final Map<String, _RateLimitEntry> _requestCounts = {};
 
 class _RateLimitEntry {
@@ -21,7 +19,6 @@ class _RateLimitEntry {
   _RateLimitEntry({required this.count, required this.windowStart});
 }
 
-// Middleware لتحديد عدد الطلبات لكل IP.
 Middleware rateLimitMiddleware() {
   return (Handler innerHandler) {
     return (Request request) async {
@@ -31,22 +28,23 @@ Middleware rateLimitMiddleware() {
       final ipAddress = connectionInfo?.remoteAddress.address ?? 'unknown';
       final now = DateTime.now();
 
-      // تنظيف العناوين التي انتهت فترة احتسابها.
       _requestCounts.removeWhere(
         (_, entry) => now.difference(entry.windowStart) >= _rateLimitWindow,
       );
 
       final entry = _requestCounts[ipAddress];
+
       if (entry == null && _requestCounts.length >= _maxTrackedIps) {
         return Response(
           503,
           body: jsonEncode({
             'success': false,
-            'message': 'Server is temporarily busy. Please try again later.',
+            'message': 'Server is temporarily busy.',
           }),
           headers: {'content-type': 'application/json; charset=utf-8'},
         );
       }
+
       if (entry == null) {
         _requestCounts[ipAddress] = _RateLimitEntry(count: 1, windowStart: now);
       } else {
@@ -75,27 +73,50 @@ Future<void> main() async {
   try {
     final authApi = TopSoftwareAuthApi();
 
-    final handler = Pipeline()
-        .addMiddleware(rateLimitMiddleware())
-        .addHandler(authApi.router.call);
+    final port = int.tryParse(Platform.environment['PORT'] ?? '') ?? 8080;
 
-    server = await shelf_io.serve(handler, InternetAddress.anyIPv4, 8080);
+    final handler = Pipeline().addMiddleware(rateLimitMiddleware()).addHandler((
+      request,
+    ) async {
+      // فحص صحة السيرفر بواسطة Render.
+      if (request.method == 'GET' && request.url.path == 'health') {
+        return Response.ok(
+          jsonEncode({'success': true, 'message': 'Backend is healthy'}),
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        );
+      }
+
+      print('REQUEST: ${request.method} ${request.url}');
+
+      final response = await authApi.router.call(request);
+
+      print('RESPONSE: ${response.statusCode}');
+
+      return response;
+    });
+
+    server = await shelf_io.serve(handler, InternetAddress.anyIPv4, port);
 
     print('======================================');
     print('TopSoftware Backend is running!');
-    print('Address: http://localhost:${server.port}');
+    print('Address: http://0.0.0.0:${server.port}');
+    print('Health Check: /health');
     print('Rate limit: $_maxRequests requests per minute per IP');
-    print('Press Ctrl + C to stop the server.');
     print('======================================');
 
-    await ProcessSignal.sigint.watch().first;
+    await Future.any([
+      ProcessSignal.sigint.watch().first,
+      ProcessSignal.sigterm.watch().first,
+    ]);
 
-    print('\nShutdown signal received...');
-  } catch (_) {
-    print('Backend server failed to start or stopped unexpectedly.');
+    print('Shutdown signal received...');
+  } catch (error, stackTrace) {
+    print('BACKEND STARTUP/RUNTIME ERROR: $error');
+    print(stackTrace);
+    rethrow;
   } finally {
     if (server != null) {
-      await server.close();
+      await server.close(force: true);
       print('HTTP Server closed.');
     }
   }
